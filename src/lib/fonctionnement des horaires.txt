@@ -1,0 +1,581 @@
+
+
+
+
+Architecture des Calculs Horaires du Calendrier Juif : Spécifications Techniques et Halachiques du Système CalJ
+L'élaboration d'un moteur de calcul pour un calendrier juif exige une double maîtrise : d'une part, la précision astronomique permettant de déterminer la position des corps célestes, et d'autre part, la rigueur talmudique et rabbinique nécessaire à l'interprétation des seuils temporels (zmanim). Le système développé pour la plateforme CalJ repose sur une formalisation mathématique rigoureuse qui intègre les différentes écoles de décisionnaires (poskim). Ce rapport présente une analyse exhaustive des règles, formules, algorithmes et divergences halachiques sous-jacents aux fonctionnalités de CalJ, afin d'offrir une base de spécifications complète pour le développement d'une application équivalente sur système d'exploitation Windows.   
+
+1. Modélisation Astronomique du Soleil et Géométrie de l'Horizon
+Les jalons de la journée juive sont intimement liés aux positions angulaires du Soleil par rapport au plan de l'horizon de l'observateur. Pour restituer les moments rituels avec une précision temporelle optimale, l'algorithme doit d'abord calculer la position astronomique exacte du Soleil.   
+
+Altitude Angulaire et Définitions Optiques
+L'altitude angulaire, notée 
+h, représente l'angle formé par le centre du disque solaire avec le plan horizontal de l'observateur. Les événements solaires et les seuils rituels sont déterminés par des valeurs angulaires précises.   
+
+Altitude Angulaire (
+h)	Phénomène Optique / Seuil Astronomique	Application Rituelle et Halachique
+0 
+∘
+ 	
+Centre du disque solaire sur l'horizon mathématique.
+
+Référence géométrique théorique pure.
+
+−0,25 
+∘
+ 	
+Bord supérieur du Soleil sur l'horizon mathématique.
+
+Tangence géométrique sans réfraction.
+
+−0,8333 
+∘
+  (
+−5/6 
+∘
+ )	
+Disparition/apparition du bord supérieur du disque.
+
+Lever (Hanetz) et Coucher (Shekia) visuels.
+
+−6 
+∘
+ 	
+Coucher de soleil civil (limite d'éclairage naturel).
+
+Seuil de baisse rapide de luminosité extérieure.
+
+−7,08 
+∘
+ 	
+Seuil de pénombre crépusculaire.
+
+Apparition des étoiles (Tzet) selon Rav Posen.
+
+−8,5 
+∘
+ 	
+Obscurité permettant de voir 3 petites étoiles.
+
+Sortie du Shabbat et des Fêtes (Rav Tucazinski).
+
+−11,0 
+∘
+ 	
+Seuil de distinction du bleu et du blanc (Misheyakir).
+
+Autorisation du port du Talit et des Tefilin.
+
+−12 
+∘
+ 	
+Coucher de soleil nautique.
+
+Limite de visibilité de la ligne d'horizon marin.
+
+−16,1 
+∘
+ 	
+Obscurité crépusculaire équivalente à 72 min à l'équinoxe.
+
+Aube (Alot) et Nuit de Rabbénou Tam (Rav Posen).
+
+−18 
+∘
+ 	
+Coucher de soleil astronomique (nuit noire complète).
+
+Début de l'obscurité céleste totale.
+
+  
+Le seuil de 
+−0,8333 
+∘
+  intègre le demi-diamètre angulaire du Soleil (
+≈0,266 
+∘
+ ) et la réfraction atmosphérique standard à température et pression moyennes (
+≈0,566 
+∘
+ ). En vertu de cette réfraction, lorsque le bord supérieur du Soleil semble toucher l'horizon visuel, le corps céleste se situe physiquement déjà sous le plan horizontal.   
+
+Algorithme de Calcul Solaire
+La détermination des heures où le Soleil atteint ces altitudes angulaires repose sur l'implémentation des équations de Paul Schlyter. Pour une latitude 
+lat, une longitude 
+long, et une date donnée, l'algorithme calcule d'abord la longitude moyenne du Soleil (
+L=M+w, où 
+M est l'anomalie moyenne et 
+w l'argument du périhélie). Il détermine ensuite le Temps Sidéral Local (
+LST) par la formule :   
+
+LST=GMST0+(UT×15,0)+long
+où 
+GMST0 représente le temps sidéral à Greenwich à 
+00:00 UT (exprimé en degrés par 
+GMST0=L+180 
+∘
+ ) et 
+UT le temps universel en heures décimales.   
+
+L'altitude solaire 
+h est liée à la déclinaison 
+Decl et à l'angle horaire local 
+LHA=LST−RA (où 
+RA est l'ascension droite) par la relation trigonométrique fondamentale :
+
+sin(h)=sin(lat)⋅sin(Decl)+cos(lat)⋅cos(Decl)⋅cos(LHA)
+En isolant 
+cos(LHA), le système calcule l'angle horaire nécessaire pour atteindre l'altitude cible 
+h :   
+
+cos(LHA)= 
+cos(lat)⋅cos(Decl)
+sin(h)−sin(lat)⋅sin(Decl)
+​
+ 
+L'analyse de la valeur de 
+cos(LHA) permet d'identifier les conditions géographiques extrêmes. Si 
+cos(LHA)<−1,0, le Soleil reste constamment au-dessus de l'altitude 
+h (phénomène de jour permanent ou Soleil de minuit). Si 
+cos(LHA)>+1,0, le Soleil ne franchit jamais cette altitude (nuit polaire). Dans l'intervalle valide 
+−1,0≤cos(LHA)≤+1,0, l'angle 
+LHA=arccos(cos(LHA)) est extrait. L'heure du passage au méridien sud (
+UT 
+sud
+​
+ ) et les heures des événements solaires s'obtiennent alors par :   
+
+UT 
+sud
+​
+ = 
+15,0
+RA−GMST0−long
+​
+ 
+UT 
+e
+ˊ
+ v 
+e
+ˊ
+ nement
+​
+ =UT 
+sud
+​
+ ± 
+15,0
+LHA
+​
+ 
+Correction d'Altitude Géographique
+L'altitude physique d'un point d'observation au-dessus du niveau de la mer modifie la position apparente de la ligne d'horizon. Une élévation 
+H (exprimée en mètres) provoque un abaissement de l'horizon visuel représenté par l'angle d'inclinaison 
+α≈0,0347 
+∘
+ × 
+H
+
+​
+ . Lors du paramétrage d'une ville dans CalJ, la prise en compte de l'altitude modifie les seuils d'apparition et de disparition du disque solaire, ce qui avance l'heure du lever et retarde d'autant l'heure du coucher de soleil.   
+
+2. Typologies et Méthodologies Halachiques de Calcul
+Le passage des coordonnées astronomiques aux heures rituelles exige de sélectionner un modèle d'interprétation rabbinique. La divergence fondamentale porte sur la définition de la journée diurne et sur la méthode de conversion des minutes talmudiques en heures proportionnelles.   
+
+La Méthode des Degrés (Ma'alot)
+Introduite au XVIIe siècle par Rabbi Yossef Shlomo Delmedigo dans son ouvrage Hhouqat HaShamayim puis reprise par le Gaon de Vilna (Biour HaGra) et le Baal HaTanya (Sidour), la méthode des degrés repose sur une interprétation photométrique des textes talmudiques. Elle énonce que les durées temporelles données par les Sages (telles que le temps de marche de 4 ou 5 mils pour mesurer l'aube ou le crépuscule) traduisent en réalité le niveau d'éclairement ambiant produit par le Soleil sous l'horizon.   
+
+Les Sages ayant formulé leurs observations pour la latitude de Jérusalem à l'équinoxe (moment où la nuit et le jour durent exactement 12 heures), les 72 minutes saisonnières séparant l'aube du lever du Soleil correspondent à un enfoncement solaire de 
+16,1 
+∘
+  sous l'horizon. La méthode des degrés applique cet angle constant de 
+−16,1 
+∘
+  en tout lieu de la Terre et à n'importe quelle date de l'année. Cette approche, théorisée au XXe siècle par le Rav Meir Posen dans son ouvrage Or Méïr, présente l'avantage d'éviter les distorsions temporelles extrêmes observées aux hautes latitudes durant les solstices.   
+
+La Méthode des Hours Proportionnelles (Sha'a Zmanit)
+Selon la tradition halachique, la période diurne est divisée en 12 fractions égales appelées heures proportionnelles ou saisonnières (Sha'a Zmanit, au pluriel Sha'ot Zmaniot). Deux grandes écoles définissent les bornes temporelles de cette journée :   
+
+Le Gaon de Vilna (GR"A) définit la journée diurne comme l'intervalle strict s'étendant du lever du Soleil (Hanetz haChama) jusqu'à son coucher (Shekiat haChama). L'heure proportionnelle du GR"A, notée 
+D, équivaut ainsi au douzième de la durée d'éclairement solaire direct.   
+
+Le Magen Avraham (M"A) inclut dans la journée diurne les périodes crépusculaires du matin et du soir, estimant que le jour rituel commence dès l'aube (Alot haShachar) et s'achève à la tombée de la nuit ou à la sortie des étoiles de Rabbénou Tam. L'heure proportionnelle du M"A est donc plus longue que celle du GR"A. Le système CalJ décline la méthode du M"A en deux variantes distinctes :   
+
+La variante M"A selon le Rav Meir Posen (Or Méïr), fondée sur une aube à 
+−16,1 
+∘
+  et une nuit de Rabbénou Tam à 
+−16,1 
+∘
+ .   
+
+La variante M"A selon le Rav Ovadia Yosef, basée sur une aube calculée à 72 minutes saisonnières du GR"A avant le lever et une nuit de Rabbénou Tam fixée à 72 minutes saisonnières du GR"A après le coucher.   
+
+3. Spécifications Formelles des Horaires Rituels dans CalJ
+Le tableau ci-dessous récapitule la totalité des identifiants, formules, références rabbiniques et conventions d'arrondi configurés dans le moteur de calcul de CalJ.   
+
+Symboles	Intitulé Halachique (Zman)	Decisionnaire / Mode de Calcul	Formule Mathématique dans CalJ	Règle d'Arrondi
+A	Alot haShachar (Aube)	Or Méïr (Rav Posen)	
+Position solaire à 
+h=−16,1 
+∘
+ 
+
+[cite: 5]
+
+Minute inférieure
+
+B	Alot haShachar (Aube)	Rav Ovadia Yosef	
+C−( 
+60
+72
+​
+ ⋅D)
+
+[cite: 5]
+
+Minute inférieure
+
+C	Hanetz haChama (Lever)	Standard	
+Position solaire à 
+h=−0,8333 
+∘
+ 
+
+[cite: 4, 5]
+
+Minute inférieure
+
+D	Sha'a Zmanit (Heure GR"A)	GR"A	
+(E−C)/12
+
+[cite: 5]
+
+Flottant exact
+
+X	Sha'a Zmanit (Heure M"A)	M"A Or Méïr	
+(O−A)/12
+
+[cite: 5]
+
+Flottant exact
+
+Y	Sha'a Zmanit (Heure M"A)	M"A Rav Ovadia	
+(P−B)/12
+
+[cite: 5]
+
+Flottant exact
+
+E	Shekiat haChama (Coucher)	Standard	
+Position solaire à 
+h=−0,8333 
+∘
+ 
+
+[cite: 4, 5]
+
+Minute supérieure
+
+F	Tefilin & Shema (Misheyakir)	Or Méïr (Rav Posen)	
+Position solaire à 
+h=−11,0 
+∘
+ 
+
+[cite: 5]
+
+Minute inférieure
+
+G	Tefilin & Shema (Misheyakir)	Rav Ovadia Yosef	
+B+( 
+60
+6
+​
+ ⋅D)
+
+[cite: 5]
+
+Minute inférieure
+
+H	Sof Zman Kriyat Shema	GR"A	
+C+(3⋅D)
+
+[cite: 5]
+
+Minute inférieure
+
+I	Sof Zman Kriyat Shema	M"A Or Méïr	
+A+(3⋅X)
+
+[cite: 5]
+
+Minute inférieure
+
+J	Sof Zman Kriyat Shema	M"A Rav Ovadia	
+B+(3⋅Y)
+
+[cite: 5]
+
+Minute inférieure
+
+-	Sof Zman Tefila	GR"A	
+C+(4⋅D)
+
+[cite: 4]
+
+Minute inférieure
+
+-	Chatzot (Midi)	Standard	
+C+(6⋅D)=(C+E)/2
+
+[cite: 4, 11]
+
+Minute inférieure
+
+-	Mincha Guedola	Standard	
+Chatzot+(0,5⋅D)
+
+[cite: 4]
+
+Minute inférieure
+
+-	Mincha Ketana	Standard	
+C+(9,5⋅D)
+
+[cite: 4]
+
+Minute inférieure
+
+-	Plag haMincha	Standard (GR"A)	
+C+(10,5⋅D)
+
+[cite: 4]
+
+Minute inférieure
+
+Q	Plag haMincha	Yalkout Yosef	
+L−( 
+60
+75
+​
+ ⋅D)
+
+[cite: 5]
+
+Minute inférieure
+
+K	Tzet haKokhavim (Étoiles)	Or Méïr (Rav Posen)	
+Position solaire à 
+h=−7,08 
+∘
+ 
+
+[cite: 5]
+
+Minute supérieure
+
+L	Tzet haKokhavim (Étoiles)	Rav Ovadia Yosef	
+E+( 
+60
+13,5
+​
+ ⋅D)
+
+[cite: 5]
+
+Minute supérieure
+
+M	Entrée de Shabbat	Standard	
+E−18 minutes
+
+[cite: 5, 7]
+
+Minute inférieure
+
+N	Fin de Shabbat	Rav Tucazinski	
+Position solaire à 
+h=−8,5 
+∘
+ 
+
+[cite: 4, 5, 6]
+
+Minute supérieure
+
+O	Nuit Rabbénou Tam	Or Méïr (Rav Posen)	
+Position solaire à 
+h=−16,1 
+∘
+ 
+
+[cite: 5]
+
+Minute supérieure
+
+P	Nuit Rabbénou Tam	Rav Ovadia Yosef	
+E+( 
+60
+72
+​
+ ⋅D)
+
+[cite: 5]
+
+Minute supérieure
+
+  
+Analyse Système des Jalons Temporels
+Chaque étape de la journée juive obéit à des règles strictes qui régissent les obligations rituelles quotidiennes.   
+
+L'Aube (Alot haShachar) fixe le début légal de la journée diurne pour l'accomplissement des commandements obligatoires de jour ainsi que le démarrage des jours de jeûne. Dans le système du Rav Meir Posen, l'aube survient lorsque le centre du Soleil atteint l'angle de 
+−16,1 
+∘
+  sous l'horizon. Dans celui du Rav Ovadia Yosef, l'aube est calculée en retranchant 72 minutes saisonnières du GR"A (soit 
+1,2×D) de l'heure du lever du Soleil 
+C. La possibilité d'enfiler le Talit et les Tefilin (Misheyakir) survient ultérieurement, soit lorsque le Soleil atteint 
+−11,0 
+∘
+  (Rav Posen), soit exactement 6 minutes saisonnières du GR"A (
+0,1×D) après l'aube du Rav Ovadia (
+B).   
+
+Le Lever du Soleil (Hanetz haChama), calculé à 
+h=−0,8333 
+∘
+ , constitue l'origine des heures proportionnelles du GR"A et marque le moment préférentiel pour la récitation de la Amida du matin (Vatikin).   
+
+L'Heure Limite de Récitation du Shema (Sof Zman Kriyat Shema) est fixée à la fin de la troisième heure proportionnelle de la journée. Selon le GR"A (
+H), cet instant est obtenu par 
+C+3⋅D. Selon le M"A d'Or Méïr (
+I), il vaut 
+A+3⋅X, tandis que pour le M"A du Rav Ovadia (
+J), il s'établit à 
+B+3⋅Y. L'application des formules du Magen Avraham entraîne un horaire limite nettement plus précoce en saison estivale, ce qui requiert une attention particulière de la part des fidèles.   
+
+L'Heure Limite de la Prière du Matin (Sof Zman Tefila) clôt la plage horaire autorisée pour la récitation de la Amida de Shacharit, fixée à la quatrième heure proportionnelle. Selon le système du GR"A, cet horaire correspond à 
+C+4⋅D.   
+
+Le Milieu du Jour (Chatzot) survient au moment de la culmen solaire, lorsque le Soleil traverse le méridien géographique de l'observateur. Cet instant équidistant du lever et du coucher se calcule par 
+Chatzot=C+6⋅D=(C+E)/2.   
+
+Les Prières de l'Après-Midi (Mincha Guedola, Mincha Ketana, Plag haMincha) s'échelonnent dans la seconde moitié de la journée. Mincha Guedola désigne le début du créneau valide pour la prière de l'après-midi, situé une demi-heure proportionnelle après Chatzot (
+Chatzot+0,5⋅D) afin de s'assurer que le Soleil a entamé sa descente. Mincha Ketana marque le moment préférentiel pour cette prière, fixé à 9,5 heures proportionnelles après le lever (
+C+9,5⋅D). Plag haMincha indique la limite théorique de la journée, établie à 10,5 heures proportionnelles (
+C+10,5⋅D). L'ouvrage Yalkout Yosef préconise une formule spécifique (
+Q) qui retranche 75 minutes saisonnières (
+1,25⋅D) à partir de la sortie des étoiles du Rav Ovadia (
+L).   
+
+Le Coucher du Soleil (Shekiat haChama), positionné au seuil angulaire de 
+−0,8333 
+∘
+ , marque la fin de la période diurne et le début du doute crépusculaire (Bein HaShemashot).   
+
+L'Entrée et la Fin du Shabbat reposent sur des marges de sécurité rituelles. Pour satisfaire au précepte d'ajouter du temps profane à la sainte journée (Tossofet Shabbat), l'allumage des bougies se fait au moins 18 minutes fixes avant le coucher du Soleil (
+E−18 min). À Jérusalem, la tradition locale porte cette avance à 40 minutes. La sortie du Shabbat (
+N) exige la certitude de la nuit, définie par la visibilité de trois petites étoiles, ce qui correspond à l'angle solaire de 
+−8,5 
+∘
+  préconisé par le Rav Tucazinski.   
+
+La Nuit de Rabbénou Tam désigne la fin du jour selon l'opinion stricte exigeant l'écoulement du temps nécessaire à la marche de 4 mils après la Shekia. Selon le Rav Meir Posen (
+O), cet instant est mesuré par l'angle de 
+−16,1 
+∘
+  sous l'horizon. Selon le Rav Ovadia Yosef (
+P), il s'obtient en ajoutant 72 minutes saisonnières du GR"A (
+1,2⋅D) à l'heure du coucher du Soleil (
+E+1,2⋅D).   
+
+4. Algorithme du Calendrier Hébraïque et Calcul du Molad
+Au-delà du calcul des horaires quotidiens, le moteur du calendrier juif détermine la structure globale de chaque année et l'instant de la conjonction lunaire (Molad).   
+
+Le Cycle Métonique et le Nombre de Mois
+Le calendrier juif repose sur un cycle lunisolaire métonique de 19 ans comprenant 235 mois synodiques. Pour établir la structure d'une année donnée 
+H, l'algorithme de Schocken détermine le nombre total de mois écoules depuis la Création jusqu'au début de l'année 
+H :   
+
+N 
+mois
+​
+ =⌊ 
+19
+235⋅(H−1)+1
+​
+ ⌋
+Le rang de l'année au sein du cycle de 19 ans est donné par 
+i=(H−1)(mod19). Les années embolismiques (comportant 13 mois par l'injonction d'un mois d'Adar I) correspondent aux rangs 3, 6, 8, 11, 14, 17 et 19 du cycle.   
+
+Calcul de l'Instant du Molad de Tishri
+La tradition talmudique fixe la durée moyenne d'un mois synodique (
+T 
+syn
+​
+ ) à 29 jours, 12 heures et 793 parts (halakim), une heure comptant 1080 parts. L'instant du Molad Tishri de l'année 
+H s'obtient en combinant ce cycle avec l'instant initial du Molad de la Création (Molad shel Tohu, survenu le 
+2 
+e
+  jour de la création à 5 heures et 204 parts) :   
+
+T 
+molad
+​
+ =(N 
+mois
+​
+ ⋅T 
+syn
+​
+ )+T 
+tohu
+​
+ 
+L'analyse du reste de la division par 7 donne le jour de la semaine et l'heure exacte du Molad. La correspondance avec le calendrier grégorien s'effectue à partir de la date d'ancrage fixée au dimanche 6 septembre 3761 avant l'ère commune.   
+
+Les Quatre Règles de Report (Dehiyot)
+Le jour du Nouvel An (Rosh HaShana, 
+1 
+er
+  Tishri) coïncide en principe avec le jour du Molad Tishri, mais subit des décalages obligatoires dictés par quatre règles de report (Dehiyot) :   
+
+La règle Lo ADU Rosh interdit à Rosh HaShana de tomber un dimanche, un mercredi ou un vendredi pour des raisons rituelles liées à l'enchaînement des jours de fête et du Shabbat. Si le Molad survient l'un de ces jours, Rosh HaShana est décalé au lendemain.   
+
+La règle Molad Zaken stipule que si le Molad Tishri se produit à midi ou plus tard (à partir de 18 heures et 0 part après le début de la journée hébraïque fixée à 18h00 la veille), Rosh HaShana est décalé au lendemain. Si ce lendemain est un jour interdit (ADU), la fête est décalée d'un jour supplémentaire.   
+
+La règle GatRaD s'applique aux années simples (non embolismiques) : si le Molad Tishri survient un mardi à 9 heures et 204 parts ou plus tard, la fête est reportée au jeudi afin d'éviter une durée anormale de l'année écoulée.   
+
+La règle BeTUTaKaPat concerne les années qui suivent une année embolismique : si le Molad Tishri tombe un lundi à 15 heures et 589 parts ou plus tard, la fête est reportée au mardi.   
+
+La combinaison de ces quatre règles détermine si l'année sera déficiente (Chassera, 353 ou 383 jours), régulière (KeSidra, 354 ou 384 jours) ou complète (Shelema, 355 ou 385 jours), fixant ainsi le nombre exact de jours de chaque mois.   
+
+5. Recommandations pour le Développement et Architecture Logicielle
+La transposition de ces équations dans une application native pour système d'exploitation Windows impose des choix d'architecture logicielle précis.   
+
+Gestion Halachique des Arrondis Temporels
+Afin de prévenir toute erreur d'observance rituelle, le logiciel ne doit pas utiliser d'arrondi arithmétique symétrique sur les horaires calculés. L'application doit appliquer une politique d'arrondi asymétrique :   
+
+Pour l'ensemble des horaires du matin (Aube, Tefilin, Lever, Limite du Shema, Limite de la Tefila), le système applique la fonction plancher (
+⌊temps⌋) afin de tronquer le résultat à la minute inférieure. Cela garantit qu'un fidèle ne récitera pas une prière au-delà du temps limite autorisé.   
+
+Pour les horaires du soir et les limites d'abstention d'interdits (Coucher du Soleil, Sortie des étoiles, Fin de Shabbat, Nuit de Rabbénou Tam), le système applique la fonction plafond (
+⌈temps⌉) afin d'arrondir à la minute supérieure. Cette approche sécurise la fin des périodes rituelles en empêchant la reprise prématurée des activités profanes.   
+
+Les calculs intermédiaires, notamment la détermination de l'heure proportionnelle 
+D et des positions solaires, doivent conserver une précision flottante à 64 bits (double precision) sans aucun arrondi prématuré.   
+
+Découpage Modulaire de l'Application
+Pour assurer la stabilité et la pérégrination du code au sein d'un environnement Windows, l'architecture du projet doit s'articuler autour de quatre modules fonctionnels indépendants et découplés :
+
+Un premier composant, le Module Calendrologique, prend en charge les calculs séculaires : déroulement du cycle métonique, calcul du Molad Tishri, évaluation des quatre Dehiyot et génération de la structure annuelle.   
+
+Un deuxième composant, le Moteur Astronomique, calcule la position exacte du Soleil en fonction des coordonnées géographiques (latitude, longitude, altitude) et gère la conversion entre le Temps Universel (
+UT) et l'heure locale officielle du système d'exploitation.   
+
+Un troisième composant, le Moteur Halachique, exploite les données brutes fournies par les modules astronomique et calendrologique pour calculer les variables temporelles 
+A à 
+Q selon le jeu d'opinions sélectionné par l'utilisateur (méthode Rav Meir Posen / Or Méïr ou méthode Rav Ovadia Yosef).   
+
+Enfin, un quatrième composant, le Filtre d'Arrondi et de Présentation, applique les règles d'arrondi asymétrique (minute inférieure pour le matin, minute supérieure pour le soir) et restitue la liste finalisée des zmanim à l'interface graphique de l'application Windows. Cette dissociation garantit une fidélité absolue aux résultats élaborés sur la plateforme CalJ.   
+

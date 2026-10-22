@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="600" viewBox="0 0 1200 600">
+  <rect width="1200" height="600" rx="32" fill="#0b0b0b"/>
+  <rect x="1" y="1" width="1198" height="598" rx="31" fill="none" stroke="#c9a227" stroke-opacity=".35" stroke-width="2"/>
+  <text x="95" y="305" fill="#c9a227" font-family="Arial,sans-serif" font-size="20" letter-spacing="5">KRONOJ</text>
+  <text x="600" y="275" fill="#f5f5f5" font-family="Arial,sans-serif" font-size="52" text-anchor="middle">י׳ בחשוון ה׳תשפ״ז</text>
+  <text x="600" y="345" fill="#888" font-family="Arial,sans-serif" font-size="20" text-anchor="middle">Paris, France</text>
+  <text x="1105" y="310" fill="#888" font-family="Arial,sans-serif" font-size="18" text-anchor="end">mercredi 21 octobre 2026</text>
+</svg>

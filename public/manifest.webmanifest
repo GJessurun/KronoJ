@@ -1,0 +1,66 @@
+{
+  "name": "KronoJ — calendrier hébraïque",
+  "short_name": "KronoJ",
+  "description": "Calendrier hébraïque et horaires de zmanim.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#000000",
+  "theme_color": "#000000",
+  "icons": [
+    {
+      "src": "/kronoj-widget-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/kronoj-widget.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "widgets": [
+    {
+      "name": "KronoJ · date hébraïque carrée",
+      "short_name": "Date hébraïque",
+      "description": "La date hébraïque du jour dans un format carré épuré.",
+      "tag": "kronoj-hebrew-date-square",
+      "template": "kronoj-hebrew-date-square",
+      "ms_ac_template": "/widgets/hebrew-date-square.json",
+      "type": "application/json",
+      "screenshots": [
+        {
+          "src": "/widgets/hebrew-date-square.svg",
+          "sizes": "600x600",
+          "label": "Widget carré 1:1 de date hébraïque",
+          "platform": "Windows"
+        }
+      ],
+      "auth": false,
+      "update": 3600,
+      "multiple": true
+    },
+    {
+      "name": "KronoJ · date hébraïque large",
+      "short_name": "Date hébraïque large",
+      "description": "La date hébraïque du jour dans un format horizontal épuré.",
+      "tag": "kronoj-hebrew-date-wide",
+      "template": "kronoj-hebrew-date-wide",
+      "ms_ac_template": "/widgets/hebrew-date-wide.json",
+      "type": "application/json",
+      "screenshots": [
+        {
+          "src": "/widgets/hebrew-date-wide.svg",
+          "sizes": "1200x600",
+          "label": "Widget horizontal 2:1 de date hébraïque",
+          "platform": "Windows"
+        }
+      ],
+      "auth": false,
+      "update": 3600,
+      "multiple": true
+    }
+  ]
+}

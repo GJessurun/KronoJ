@@ -1,0 +1,88 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="100%" height="100%">
+  <defs>
+    <!-- Fond bleu nuit profond avec effet de lumière radiale au centre -->
+    <radialGradient id="bgGrad" cx="50%" cy="45%" r="75%">
+      <stop offset="0%" stop-color="#182533" />
+      <stop offset="55%" stop-color="#0e1620" />
+      <stop offset="100%" stop-color="#06090e" />
+    </radialGradient>
+
+    <!-- Dégradé doré luxueux -->
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fcedc0" />
+      <stop offset="25%" stop-color="#dfb66a" />
+      <stop offset="60%" stop-color="#b2893f" />
+      <stop offset="100%" stop-color="#6e4f1a" />
+    </linearGradient>
+
+    <!-- Dégradé bleu pétrole sombre pour le cœur de l'étoile -->
+    <linearGradient id="starInner" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e3042" />
+      <stop offset="100%" stop-color="#0b131c" />
+    </linearGradient>
+
+    <!-- Ombre portée 3D -->
+    <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="16" flood-color="#000000" flood-opacity="0.85" />
+    </filter>
+
+    <filter id="clockShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="5" stdDeviation="8" flood-color="#000000" flood-opacity="0.6" />
+    </filter>
+
+    <!-- Définition d'une barre d'heure individuelle (12h) -->
+    <line id="hourTick" x1="256" y1="172" x2="256" y2="188" stroke="url(#gold)" stroke-width="4" stroke-linecap="round" />
+  </defs>
+
+  <!-- Arrière-plan pour l'icône de l'application -->
+  <rect width="512" height="512" rx="112" fill="url(#bgGrad)" />
+
+  <!-- Ensemble du symbole centré avec ombre 3D -->
+  <g filter="url(#dropShadow)">
+    
+    <!-- MAGUEN DAVID : Triangles équilatéraux alignés -->
+    <!-- Triangle HAUT -->
+    <polygon points="256,60 425.7,354 86.3,354" fill="url(#starInner)" stroke="url(#gold)" stroke-width="14" stroke-linejoin="round" />
+
+    <!-- Triangle BAS -->
+    <polygon points="256,452 86.3,158 425.7,158" fill="url(#starInner)" stroke="url(#gold)" stroke-width="14" stroke-linejoin="round" />
+
+    <!-- CADRAN DE L'HORLOGE -->
+    <g filter="url(#clockShadow)">
+      <!-- Anneau extérieur doré -->
+      <circle cx="256" cy="256" r="98" fill="url(#starInner)" stroke="url(#gold)" stroke-width="10" />
+              
+      <!-- Cercle intérieur de repère -->
+      <circle cx="256" cy="256" r="88" fill="none" stroke="url(#gold)" stroke-width="2" opacity="0.7" />
+    </g>
+
+    <!-- LES 12 BARRES D'AFFICHAGE DES HEURES (Rotation exacte à 360° par pas de 30°) -->
+    <g>
+      <use href="#hourTick" />
+      <use href="#hourTick" transform="rotate(30, 256, 256)" />
+      <use href="#hourTick" transform="rotate(60, 256, 256)" />
+      <use href="#hourTick" transform="rotate(90, 256, 256)" />
+      <use href="#hourTick" transform="rotate(120, 256, 256)" />
+      <use href="#hourTick" transform="rotate(150, 256, 256)" />
+      <use href="#hourTick" transform="rotate(180, 256, 256)" />
+      <use href="#hourTick" transform="rotate(210, 256, 256)" />
+      <use href="#hourTick" transform="rotate(240, 256, 256)" />
+      <use href="#hourTick" transform="rotate(270, 256, 256)" />
+      <use href="#hourTick" transform="rotate(300, 256, 256)" />
+      <use href="#hourTick" transform="rotate(330, 256, 256)" />
+    </g>
+
+    <!-- AIGUILLES DE L'HORLOGE ÉPAISSIES -->
+    <g stroke-linejoin="round" stroke-linecap="round">
+      <!-- Aiguille des heures (courte) -->
+      <path d="M 256,256 L 218,226 L 204,212 L 218,220 Z" fill="url(#gold)" stroke="url(#gold)" stroke-width="4" />
+
+      <!-- Aiguille des minutes (longue) -->
+      <path d="M 256,256 L 294,222 L 312,200 L 294,216 Z" fill="url(#gold)" stroke="url(#gold)" stroke-width="4" />
+
+      <!-- Capuchon central -->
+      <circle cx="256" cy="256" r="8" fill="url(#gold)" />
+      <circle cx="256" cy="256" r="3.5" fill="#0b131c" />
+    </g>
+  </g>
+</svg>
