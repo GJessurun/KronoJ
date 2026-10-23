@@ -1,0 +1,50 @@
+name: 'Publish KronoJ'
+
+on:
+  push:
+    tags:
+      - 'v*' # Se déclenche uniquement quand vous poussez un tag comme v0.1.0, v1.0.0, etc.
+
+jobs:
+  publish-tauri:
+    permissions:
+      contents: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: 'windows-latest' # Compile la version Windows (.exe et .msi)
+
+    runs-on: ${{ matrix.platform }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-level: 'lts/*'
+          cache: 'npm'
+
+      - name: Install Rust stable
+        uses: dtolnay/rust-toolchain@stable
+
+      # ÉTAPE CLÉ : GitHub installe automatiquement UPX pour vous sur ses serveurs !
+      - name: Install UPX
+        uses: crazy-max/ghaction-upx@v3
+        with:
+          install-only: true
+
+      - name: Install Frontend Dependencies
+        run: npm install
+
+      # Utilisation de l'Action officielle de Tauri pour compiler et créer la Release
+      - name: Build and Publish Tauri App
+        uses: tauri-apps/tauri-action@v0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tagName: ${{ github.ref_name }}
+          releaseName: 'KronoJ v__VERSION__'
+          releaseBody: 'Déploiement automatisé par GitHub Actions.'
+          releaseDraft: true # Crée la release en brouillon pour vous laisser la vérifier avant de la rendre publique
+          prerelease: false
