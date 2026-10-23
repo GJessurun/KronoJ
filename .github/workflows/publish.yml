@@ -28,32 +28,19 @@ jobs:
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install UPX
-        uses: crazy-max/ghaction-upx@v3
-        with:
-          install-only: true
-
       - name: Install Frontend Dependencies
         run: npm install
 
-      # 1. On lance le build classique de Tauri sans UPX dans le JSON
-      - name: Build Tauri App
-        run: npm run tauri build
-
-      # 2. L'Action compresse manuellement le binaire .exe généré par Tauri avant la mise en release !
-      - name: Compress Binary with UPX
-        run: |
-          upx --best --lzma src-tauri/target/release/KronoJ.exe
-        continue-on-error: true # Évite de bloquer si le chemin du fichier diffère légèrement
-
-      # 3. On crée la release avec les fichiers produits
-      - name: Publish Tauri App Release
+      # C'est CETTE étape qui va compiler ET uploader automatiquement le .exe et .msi au bon endroit
+      - name: Build and Publish Tauri App Release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'KronoJ v__VERSION__'
-          releaseBody: 'Déploiement automatisé compressé par UPX.'
+          releaseBody: 'Déploiement Windows automatisé (.msi et installateur .exe).'
           releaseDraft: true
           prerelease: false
+
+        
