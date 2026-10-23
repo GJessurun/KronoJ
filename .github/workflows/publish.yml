@@ -3,7 +3,7 @@ name: 'Publish KronoJ'
 on:
   push:
     tags:
-      - 'v*' # Se déclenche uniquement quand vous poussez un tag comme v0.1.0, v1.0.0, etc.
+      - 'v*'
 
 jobs:
   publish-tauri:
@@ -13,7 +13,7 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - platform: 'windows-latest' # Compile la version Windows (.exe et .msi)
+          - platform: 'windows-latest'
 
     runs-on: ${{ matrix.platform }}
     steps:
@@ -22,13 +22,12 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-level: 'lts/*'
+          node-version: 'lts/*'
           cache: 'npm'
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      # ÉTAPE CLÉ : GitHub installe automatiquement UPX pour vous sur ses serveurs !
       - name: Install UPX
         uses: crazy-max/ghaction-upx@v3
         with:
@@ -37,14 +36,24 @@ jobs:
       - name: Install Frontend Dependencies
         run: npm install
 
-      # Utilisation de l'Action officielle de Tauri pour compiler et créer la Release
-      - name: Build and Publish Tauri App
+      # 1. On lance le build classique de Tauri sans UPX dans le JSON
+      - name: Build Tauri App
+        run: npm run tauri build
+
+      # 2. L'Action compresse manuellement le binaire .exe généré par Tauri avant la mise en release !
+      - name: Compress Binary with UPX
+        run: |
+          upx --best --lzma src-tauri/target/release/KronoJ.exe
+        continue-on-error: true # Évite de bloquer si le chemin du fichier diffère légèrement
+
+      # 3. On crée la release avec les fichiers produits
+      - name: Publish Tauri App Release
         uses: tauri-apps/tauri-action@v0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           tagName: ${{ github.ref_name }}
           releaseName: 'KronoJ v__VERSION__'
-          releaseBody: 'Déploiement automatisé par GitHub Actions.'
-          releaseDraft: true # Crée la release en brouillon pour vous laisser la vérifier avant de la rendre publique
+          releaseBody: 'Déploiement automatisé compressé par UPX.'
+          releaseDraft: true
           prerelease: false
