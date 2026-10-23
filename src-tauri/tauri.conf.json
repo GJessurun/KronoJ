@@ -39,10 +39,14 @@
     ],
     "windows": {
       "nsis": {
-        "upx": true
+        "upx": {
+          "enabled": true
+        }
       },
       "wix": {
-        "upx": true
+        "upx": {
+          "enabled": true
+        }
       }
     }
   }
