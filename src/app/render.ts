@@ -64,12 +64,12 @@ export function renderApp(
     state.liturgy,
     now
   );
-  const widgetDisplayDate = getDisplayDate(
+
     getTodayInTimeZone(state.city.timeZone, now),
     state.city,
     state.liturgy,
     now
-  );
+    
   const inIsrael =
     state.city.countryCode === "il" || state.city.timeZone === "Asia/Jerusalem";
   const scheme = inIsrael ? ParashaScheme.ISRAEL : ParashaScheme.WORLD;
@@ -78,7 +78,6 @@ export function renderApp(
 
   const gregorian = formatGregorianDateFr(displayDate);
   const hebrew = formatHebrewDate(hdate);
-  const widgetHebrew = formatHebrewDate(HDate.make(widgetDisplayDate));
   const isShabbatDay = isShabbat(displayDate);
   const omerDay = getOmerDay(gdate, scheme);
   const holiday = getHolidayDisplay(gdate, scheme);
@@ -313,23 +312,6 @@ export function renderApp(
                 return `<label class="toggle-row"><span class="toggle-copy"><strong>${label}</strong><small>${isHe ? labels.fr : labels.he}</small></span><input type="checkbox" name="notification" data-zman-id="${id}" ${isChecked ? "checked" : ""} ${isTauri ? "" : "disabled"} /><span class="toggle-switch" aria-hidden="true"></span></label>`;
               }).join("")}
             </fieldset>
-          </section>
-
-          <section class="settings-card">
-            <div class="settings-card-heading"><span class="settings-card-icon">א</span><div><h2>Widget Windows</h2><p>La date hébraïque, dans deux formats épurés.</p></div></div>
-            <div class="hebrew-widget-previews">
-              <article class="hebrew-widget-preview hebrew-widget-preview--square" aria-label="Aperçu du widget carré">
-                <span class="hebrew-widget-brand">KRONOJ · 1:1</span>
-                <strong lang="he" dir="rtl">${escapeHtml(widgetHebrew)}</strong>
-                <span class="hebrew-widget-location">${escapeHtml(state.city.label)}</span>
-              </article>
-              <article class="hebrew-widget-preview hebrew-widget-preview--wide" aria-label="Aperçu du widget large">
-                <span class="hebrew-widget-brand">KRONOJ · 2:1</span>
-                <strong lang="he" dir="rtl">${escapeHtml(widgetHebrew)}</strong>
-                <span class="hebrew-widget-location">${escapeHtml(state.city.label)}</span>
-              </article>
-            </div>
-            <p class="settings-status" id="widgets-status">${isTauri ? "Ces widgets sont disponibles dans la version PWA publiée en HTTPS, pas dans l’exécutable Tauri seul." : "Publiez et installez la PWA depuis Microsoft Edge en HTTPS, puis ouvrez Windows + W → Ajouter des widgets."}</p>
           </section>
 
           <section class="settings-card settings-card--startup">
