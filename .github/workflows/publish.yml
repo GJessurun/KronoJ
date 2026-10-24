@@ -1,46 +1,75 @@
-name: 'Publish KronoJ'
+name: Publish KronoJ
 
 on:
   push:
     tags:
       - 'v*'
 
-jobs:
-  publish-tauri:
-    permissions:
-      contents: write
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: 'windows-latest'
+permissions:
+  contents: write
 
-    runs-on: ${{ matrix.platform }}
+jobs:
+  publish-windows:
+    runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
+      - name: Checkout source
+        uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 'lts/*'
-          cache: 'npm'
+          cache: npm
 
       - name: Install Rust stable
         uses: dtolnay/rust-toolchain@stable
 
-      - name: Install Frontend Dependencies
-        run: npm install
+      - name: Install frontend dependencies
+        run: npm ci
 
-      # C'est CETTE étape qui va compiler ET uploader automatiquement le .exe et .msi au bon endroit
-      - name: Build and Publish Tauri App Release
-        uses: tauri-apps/tauri-action@v0
+      - name: Build installers with downloadable WebView2
+        run: npx tauri build
+
+      - name: Stage downloadable-WebView2 installers
+        shell: pwsh
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tagName: ${{ github.ref_name }}
-          releaseName: 'KronoJ v__VERSION__'
-          releaseBody: 'Déploiement Windows automatisé (.msi et installateur .exe).'
-          releaseDraft: true
-          prerelease: false
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          New-Item -ItemType Directory -Force -Path release-assets | Out-Null
+          $msi = @(Get-ChildItem "src-tauri/target/release/bundle/msi" -Filter "*.msi")
+          $exe = @(Get-ChildItem "src-tauri/target/release/bundle/nsis" -Filter "*-setup.exe")
+          if ($msi.Count -ne 1) { throw "Expected one MSI installer, found $($msi.Count)." }
+          if ($exe.Count -ne 1) { throw "Expected one NSIS setup executable, found $($exe.Count)." }
+          Copy-Item $msi[0].FullName "release-assets/KronoJ-$env:RELEASE_TAG-windows-x64-webview-download.msi"
+          Copy-Item $exe[0].FullName "release-assets/KronoJ-$env:RELEASE_TAG-windows-x64-webview-download-setup.exe"
 
-        
+      - name: Build installers with offline WebView2
+        run: npx tauri build --config src-tauri/tauri.offline.conf.json
+
+      - name: Stage offline-WebView2 installers
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ github.ref_name }}
+        run: |
+          $msi = @(Get-ChildItem "src-tauri/target/release/bundle/msi" -Filter "*.msi")
+          $exe = @(Get-ChildItem "src-tauri/target/release/bundle/nsis" -Filter "*-setup.exe")
+          if ($msi.Count -ne 1) { throw "Expected one MSI installer, found $($msi.Count)." }
+          if ($exe.Count -ne 1) { throw "Expected one NSIS setup executable, found $($exe.Count)." }
+          Copy-Item $msi[0].FullName "release-assets/KronoJ-$env:RELEASE_TAG-windows-x64-webview-offline.msi"
+          Copy-Item $exe[0].FullName "release-assets/KronoJ-$env:RELEASE_TAG-windows-x64-webview-offline-setup.exe"
+
+      - name: Publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: KronoJ ${{ github.ref_name }}
+          body: |
+            Installateurs Windows x64 de KronoJ.
+
+            - `webview-download` : installateur léger ; Internet est requis si WebView2 Runtime n'est pas déjà installé.
+            - `webview-offline` : WebView2 Runtime est inclus ; l'installation peut se faire sans connexion Internet.
+            - GitHub fournit également les archives du code source correspondant à ce tag.
+          draft: false
+          prerelease: false
+          files: release-assets/*
+          fail_on_unmatched_files: true

@@ -28,6 +28,19 @@ npm run tauri build
 
 L'exécutable se trouve dans `src-tauri/target/release/bundle/`.
 
+## Publication GitHub
+
+Une release Windows publique est compilée automatiquement lorsqu'un tag de version `v*` est poussé. Le workflow publie quatre installateurs x64 : MSI et EXE avec WebView2 téléchargé si nécessaire, ainsi que MSI et EXE avec le programme d'installation WebView2 hors ligne inclus. GitHub ajoute aussi les archives du code source correspondant au tag.
+
+Pour publier la version indiquée par `package.json`, créez et poussez son tag (remplacez-le par la prochaine version lors d'une publication ultérieure) :
+
+```bash
+git tag v0.1.3
+git push origin v0.1.3
+```
+
+La compilation et la publication peuvent être suivies dans l'onglet **Actions** du dépôt ; la release apparaît ensuite dans **Releases**.
+
 ## Build Microsoft Store
 
 Le profil Store produit uniquement l'installateur NSIS et utilise l'installateur WebView2 hors ligne :
