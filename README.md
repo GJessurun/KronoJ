@@ -32,12 +32,13 @@ L'exécutable se trouve dans `src-tauri/target/release/bundle/`.
 
 Une release Windows publique est compilée automatiquement lorsqu'un tag de version `v*` est poussé. Le workflow publie quatre installateurs x64 : MSI et EXE avec WebView2 téléchargé si nécessaire, ainsi que MSI et EXE avec le programme d'installation WebView2 hors ligne inclus. GitHub ajoute aussi les archives du code source correspondant au tag.
 
-Pour publier la version indiquée par `package.json`, créez et poussez son tag (remplacez-le par la prochaine version lors d'une publication ultérieure) :
+Quand vous souhaitez publier les changements actuels, lancez une seule commande pour incrémenter la version, synchroniser les fichiers, créer le commit et le tag, puis tout pousser sur GitHub :
 
 ```bash
-git tag v0.1.3
-git push origin v0.1.3
+npm run release -- patch
 ```
+
+La commande inclut dans le commit de release les changements déjà présents dans le dépôt, synchronise les versions dans les fichiers npm, Tauri et Rust, puis pousse le commit et le tag ensemble vers `origin`. Remplacez `patch` par `minor` ou `major` pour choisir le type d'incrément. Vérifiez `git status` avant de la lancer : toutes les modifications non ignorées (indexées, modifiées ou nouvelles) seront incluses.
 
 La compilation et la publication peuvent être suivies dans l'onglet **Actions** du dépôt ; la release apparaît ensuite dans **Releases**.
 
@@ -49,7 +50,7 @@ Le profil Store produit uniquement l'installateur NSIS et utilise l'installateur
 npm run tauri:store
 ```
 
-Dans Partner Center, indiquez `/S` (S majuscule) comme argument d’installation silencieuse pour l’installateur `-setup.exe`. Vous pouvez le vérifier manuellement en exécutant le fichier généré avec `/S`, par exemple `KronoJ_0.1.0_x64-setup.exe /S`. La publication demande également une signature de code et un mécanisme de mise à jour.
+Dans Partner Center, indiquez `/S` (S majuscule) comme argument d’installation silencieuse pour l’installateur `-setup.exe`. Vous pouvez le vérifier manuellement en exécutant le fichier généré avec `/S`, par exemple `KronoJ_<version>_x64-setup.exe /S`. La publication demande également une signature de code et un mécanisme de mise à jour.
 
 ## Fonctionnalités
 
