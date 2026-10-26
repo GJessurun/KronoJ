@@ -9,13 +9,21 @@ Application desktop Windows pour les zmanim et le calendrier hébraïque. Les ca
 - **Leaflet + OpenStreetMap** — choix du lieu sur carte interactive
 - **tz-lookup** — fuseau horaire calculé hors ligne depuis les coordonnées
 - **kosher-zmanim** — calculs astronomiques
-- **calj-jdates** (cloné dans `src/lib/calj-jdates`) — dates hébraïques, fêtes, Omer
+- **calj-jdates** (sous-module Git dans `src/lib/calj-jdates`) — dates hébraïques, fêtes, Omer
 
 ## Développement
 
 ```bash
+git clone --recurse-submodules https://github.com/GJessurun/KronoJ.git
+cd KronoJ
 npm install
 npm run tauri dev
+```
+
+Si le dépôt a déjà été cloné sans ses sous-modules, initialisez-les avant de compiler :
+
+```bash
+git submodule update --init --recursive
 ```
 
 ## Build .exe

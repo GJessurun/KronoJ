@@ -1,0 +1,3 @@
+[submodule "src/lib/calj-jdates"]
+	path = src/lib/calj-jdates
+	url = https://github.com/zzgab/calj-jdates.git

@@ -7,7 +7,7 @@ import {
   formatGregorianDateFr,
   formatHebrewDate,
 } from "./lib/hebrew-format";
-import { HDate } from "./lib/calj-jdates/HDate";
+import { HDate } from "./lib/calj-jdates/src/HDate";
 
 interface WidgetInstance {
   id: string;

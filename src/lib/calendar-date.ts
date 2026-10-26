@@ -1,5 +1,5 @@
-import { GDate } from "./calj-jdates/GDate";
-import { HDate, HDateMonth } from "./calj-jdates/HDate";
+import { GDate } from "./calj-jdates/src/GDate";
+import { HDate, HDateMonth } from "./calj-jdates/src/HDate";
 
 export type CalendarType = "civil" | "hebrew";
 

@@ -9,9 +9,9 @@ import {
 } from "../lib/hebrew-format";
 import { getHolidayDisplay } from "../lib/holiday-display";
 import { formatOmerLine, getOmerDay } from "../lib/omer";
-import { HDate } from "../lib/calj-jdates/HDate";
+import { HDate } from "../lib/calj-jdates/src/HDate";
 import { getWeeklyParasha } from "../lib/parasha";
-import { ParashaScheme } from "../lib/calj-jdates/ParashaScheme";
+import { ParashaScheme } from "../lib/calj-jdates/src/ParashaScheme";
 import {
   computeZmanim,
   getActiveZmanIndex,

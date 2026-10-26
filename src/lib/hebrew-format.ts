@@ -1,7 +1,7 @@
-import { HDate } from "./calj-jdates/HDate";
-import { Parasha } from "./calj-jdates/Parasha";
-import { HebrewParashaLocalizer } from "./calj-jdates/HebrewParashaLocalizer";
-import { ParashaScheme } from "./calj-jdates/ParashaScheme";
+import { HDate } from "./calj-jdates/src/HDate";
+import { Parasha } from "./calj-jdates/src/Parasha";
+import { HebrewParashaLocalizer } from "./calj-jdates/src/HebrewParashaLocalizer";
+import { ParashaScheme } from "./calj-jdates/src/ParashaScheme";
 
 const UNITS = [
   { value: 400, letter: "ת" },

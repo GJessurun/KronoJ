@@ -1,4 +1,4 @@
-import { GDate } from "../lib/calj-jdates/GDate";
+import { GDate } from "../lib/calj-jdates/src/GDate";
 import type { AppLocation } from "../lib/location";
 import type { Liturgy } from "../lib/zmanim-service";
 import { getTzeitTime } from "../lib/zmanim-service";

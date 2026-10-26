@@ -1,7 +1,7 @@
-import { Festival } from "./calj-jdates/Festival";
-import { GDate } from "./calj-jdates/GDate";
-import { HDate, HDateMonth } from "./calj-jdates/HDate";
-import { ParashaScheme } from "./calj-jdates/ParashaScheme";
+import { Festival } from "./calj-jdates/src/Festival";
+import { GDate } from "./calj-jdates/src/GDate";
+import { HDate, HDateMonth } from "./calj-jdates/src/HDate";
+import { ParashaScheme } from "./calj-jdates/src/ParashaScheme";
 
 export function getOmerDay(gdate: GDate, scheme: ParashaScheme): number | null {
   const h = HDate.make(gdate);
