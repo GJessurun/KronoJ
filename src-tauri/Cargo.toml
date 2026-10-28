@@ -1,6 +1,6 @@
 [package]
 name = "kronoj"
-version = "0.1.6"
+version = "0.1.7"
 description = "KronoJ - Hebrew calendar and zmanim desktop app"
 authors = ["you"]
 edition = "2021"

@@ -6,7 +6,7 @@ use std::{
 };
 use tauri::{
     menu::{Menu, MenuItem},
-    tray::TrayIconBuilder,
+    tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager, State,
 };
 use tauri_plugin_notification::NotificationExt;
@@ -111,7 +111,21 @@ pub fn run() {
             let _tray = TrayIconBuilder::new()
                 .icon(icon.clone())
                 .menu(&menu)
+                .show_menu_on_left_click(false)
                 .tooltip("KronoJ")
+                .on_tray_icon_event(|tray, event| {
+                    if let TrayIconEvent::Click {
+                        button: MouseButton::Left,
+                        button_state: MouseButtonState::Up,
+                        ..
+                    } = event
+                    {
+                        if let Some(window) = tray.app_handle().get_webview_window("main") {
+                            let _ = window.show();
+                            let _ = window.set_focus();
+                        }
+                    }
+                })
                 .on_menu_event(|app, event| match event.id.as_ref() {
                     "quit" => {
                         app.exit(0);
