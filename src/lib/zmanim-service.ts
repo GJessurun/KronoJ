@@ -25,9 +25,7 @@ export type ZmanId =
   | "plagYalkutYosef"
   | "candleLighting"
   | "shkia"
-  | "tzeit"
-  | "shabbatEnd"
-  | "rabbenuTam";
+  | "tzeit";
 
 export const ZMAN_ORDER: ZmanId[] = [
   "alot",
@@ -44,8 +42,6 @@ export const ZMAN_ORDER: ZmanId[] = [
   "candleLighting",
   "shkia",
   "tzeit",
-  "shabbatEnd",
-  "rabbenuTam",
 ];
 
 export interface ZmanEntry {
@@ -163,7 +159,8 @@ function getSelectedOpinionTimes(
 function computeZmanimUnrounded(
   date: Date,
   city: AppLocation,
-  liturgy: Liturgy
+  liturgy: Liturgy,
+  useRabbenuTam: boolean
 ): {
   id: ZmanId;
   time: DateTime;
@@ -190,7 +187,6 @@ function computeZmanimUnrounded(
   const alotOvadia = offsetMs(hanetz, -zmaniyotMinutes(shaahGraMs, 72));
   const misheyakirPosen = cal.getMisheyakir11Degrees();
   const misheyakirOvadia = offsetMs(alotOvadia, zmaniyotMinutes(shaahGraMs, 6));
-  const rabbenuTamOvadia = offsetMs(shekia, zmaniyotMinutes(shaahGraMs, 72));
   const shaahMaMs =
     alotPosen?.isValid && rabbenuTamPosen?.isValid
       ? (rabbenuTamPosen.toMillis() - alotPosen.toMillis()) / 12
@@ -198,7 +194,6 @@ function computeZmanimUnrounded(
   const hatzot = midpoint(hanetz, shekia);
   const ovadiaTzeit = offsetMs(shekia, zmaniyotMinutes(shaahGraMs, 13.5));
   const isFriday = date.getDay() === 5;
-  const isSaturday = date.getDay() === 6;
   const entries: {
     id: ZmanId;
     time: DateTime | null;
@@ -274,18 +269,10 @@ function computeZmanimUnrounded(
       rounding: "floor",
     },
     { id: "shkia", time: shekia, rounding: "ceil" },
-    { id: "tzeit", time: selected.tzeit, rounding: "ceil" },
     {
-      id: "shabbatEnd",
-      time: isSaturday ? cal.getTzaisGeonim8Point5Degrees() : null,
+      id: "tzeit",
+      time: useRabbenuTam ? selected.rabbenuTam : selected.tzeit,
       rounding: "ceil",
-    },
-    {
-      id: "rabbenuTam",
-      time: selected.rabbenuTam,
-      rounding: "ceil",
-      alternateTime: method === "angles" ? rabbenuTamOvadia : rabbenuTamPosen,
-      alternateOpinion: method === "angles" ? "Rav Ovadia" : "Rav Posen",
     },
   ];
 
@@ -307,10 +294,11 @@ function computeZmanimUnrounded(
 export function computeZmanim(
   date: Date,
   city: AppLocation,
-  liturgy: Liturgy
+  liturgy: Liturgy,
+  useRabbenuTam = false
 ): ZmanEntry[] {
   try {
-    return computeZmanimUnrounded(date, city, liturgy)
+    return computeZmanimUnrounded(date, city, liturgy, useRabbenuTam)
       .map(({ id, time, rounding, alternateTime, alternateOpinion }) => {
         const roundedTime = ceilOrFloorToMinute(time, rounding);
         const roundedAlternateTime = alternateTime
@@ -356,10 +344,11 @@ export function getActiveZmanIndex(
 export function getTzeitTime(
   date: Date,
   city: AppLocation,
-  liturgy: Liturgy
+  liturgy: Liturgy,
+  useRabbenuTam = false
 ): DateTime | null {
   try {
-    const zmanim = computeZmanim(date, city, liturgy);
+    const zmanim = computeZmanim(date, city, liturgy, useRabbenuTam);
     return zmanim.find((z) => z.id === "tzeit")?.time ?? null;
   } catch (error) {
     console.error("Erreur Tzeit :", error);

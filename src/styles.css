@@ -129,6 +129,29 @@ body {
   font-weight: 400;
 }
 
+.parasha-shabbat-times {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 3px;
+  color: var(--color-text-muted);
+  font-size: 0.72rem;
+  font-weight: 300;
+}
+
+.parasha-shabbat-time {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.parasha-shabbat-times strong {
+  color: var(--color-gold);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+
 .date-wrapper--shabbat .parasha-line {
   padding-top: 10px;
   border-top: 1px solid rgba(201, 162, 39, 0.3);
@@ -1134,6 +1157,54 @@ body {
   cursor: pointer;
 }
 
+.settings-nav {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  padding: 11px 14px 0;
+}
+
+.settings-tab {
+  display: flex;
+  min-width: 0;
+  min-height: 58px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  padding: 7px 3px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.66rem;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.settings-tab > span {
+  color: var(--color-gold);
+  font-size: 0.95rem;
+  line-height: 1;
+}
+
+.settings-tab:hover {
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--color-text);
+}
+
+.settings-tab.is-active {
+  border-color: rgba(224, 189, 120, 0.28);
+  background: rgba(224, 189, 120, 0.1);
+  color: var(--color-gold);
+}
+
+.settings-tab:focus-visible {
+  outline: 2px solid var(--color-gold);
+  outline-offset: 2px;
+}
+
 .settings-content {
   display: grid;
   gap: 12px;
@@ -1142,6 +1213,15 @@ body {
   overscroll-behavior: contain;
   scrollbar-color: rgba(224, 189, 120, 0.3) transparent;
   scrollbar-width: thin;
+}
+
+.settings-section {
+  display: grid;
+  gap: 12px;
+}
+
+.settings-section[hidden] {
+  display: none;
 }
 
 .settings-card {
@@ -1185,6 +1265,10 @@ body {
 .settings-group {
   margin: 0;
   border: 0;
+}
+
+.settings-group--sub {
+  margin-top: 14px;
 }
 
 .settings-group legend,
@@ -1419,6 +1503,10 @@ body {
   .notification-actions {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .settings-nav {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
 

@@ -28,7 +28,8 @@ export function getDisplayDate(
   selectedDate: Date,
   city: AppLocation,
   liturgy: Liturgy,
-  now: Date = new Date()
+  now: Date = new Date(),
+  useRabbenuTam = false
 ): Date {
   const today = getTodayInTimeZone(city.timeZone, now);
   const selected = startOfDay(selectedDate);
@@ -37,7 +38,7 @@ export function getDisplayDate(
     return selected;
   }
 
-  const tzeit = getTzeitTime(selected, city, liturgy);
+  const tzeit = getTzeitTime(selected, city, liturgy, useRabbenuTam);
   if (!tzeit) return selected;
 
   const nowDt = DateTime.fromJSDate(now).setZone(city.timeZone);

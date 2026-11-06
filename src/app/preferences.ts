@@ -13,6 +13,7 @@ export type LocationMode = "auto" | "map";
 export interface AppPreferences {
   location: AppLocation;
   liturgy: Liturgy;
+  useRabbenuTam: boolean;
   language: Language;
   locationMode: LocationMode;
   onboardingComplete: boolean;
@@ -23,6 +24,7 @@ export interface AppPreferences {
 const DEFAULTS: AppPreferences = {
   location: DEFAULT_LOCATION,
   liturgy: "sefarade",
+  useRabbenuTam: false,
   language: "fr",
   locationMode: "auto",
   onboardingComplete: false,
@@ -33,6 +35,16 @@ const DEFAULTS: AppPreferences = {
 const STORE_PATH = "kronoj-settings.json";
 
 let storeInstance: Awaited<ReturnType<typeof load>> | null = null;
+
+function normalizeNotifications(
+  notifications: Record<string, boolean> | undefined
+): Record<string, boolean> {
+  const { shabbatEnd, rabbenuTam, ...current } = notifications ?? {};
+  if (shabbatEnd || rabbenuTam) {
+    current.tzeit = true;
+  }
+  return current;
+}
 
 function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -94,14 +106,16 @@ export async function loadPreferences(): Promise<AppPreferences> {
       ...DEFAULTS,
       ...legacy,
       location: loc,
+      useRabbenuTam: legacy?.useRabbenuTam === true,
       locationMode: legacyMode === "map" ? "map" : "auto",
-      notifications: legacy?.notifications ?? DEFAULTS.notifications,
+      notifications: normalizeNotifications(legacy?.notifications),
       startAtLogin: legacy?.startAtLogin ?? DEFAULTS.startAtLogin,
     };
   }
 
   const store = await getStore();
   const liturgy = await store.get<Liturgy>("liturgy");
+  const useRabbenuTam = await store.get<boolean>("useRabbenuTam");
   const language = await store.get<Language>("language");
   const locationMode = await store.get<LocationMode>("locationMode");
   const onboardingComplete = await store.get<boolean>("onboardingComplete");
@@ -111,10 +125,13 @@ export async function loadPreferences(): Promise<AppPreferences> {
   return {
     location: cached ?? storedLocation ?? DEFAULTS.location,
     liturgy: liturgy ?? DEFAULTS.liturgy,
+    useRabbenuTam: useRabbenuTam === true,
     language: language ?? DEFAULTS.language,
     locationMode: locationMode === "map" ? "map" : "auto",
     onboardingComplete: onboardingComplete ?? DEFAULTS.onboardingComplete,
-    notifications: (await store.get<Record<string, boolean>>("notifications")) ?? DEFAULTS.notifications,
+    notifications: normalizeNotifications(
+      await store.get<Record<string, boolean>>("notifications")
+    ),
     startAtLogin: startAtLogin ?? DEFAULTS.startAtLogin,
   };
 }
@@ -133,6 +150,7 @@ export async function savePreferences(
     const {
       location,
       liturgy,
+      useRabbenuTam,
       language,
       locationMode,
       onboardingComplete,
@@ -144,6 +162,7 @@ export async function savePreferences(
       JSON.stringify({
         location,
         liturgy,
+        useRabbenuTam,
         language,
         locationMode,
         onboardingComplete,

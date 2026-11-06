@@ -7,6 +7,7 @@ export interface AppState {
   selectedDate: Date;
   city: AppLocation;
   liturgy: Liturgy;
+  useRabbenuTam: boolean;
   language: Language;
   locationMode: LocationMode;
   onboardingComplete: boolean;
@@ -19,6 +20,7 @@ export function createInitialState(prefs: AppPreferences): AppState {
     selectedDate: getTodayInTimeZone(prefs.location.timeZone),
     city: prefs.location,
     liturgy: prefs.liturgy,
+    useRabbenuTam: prefs.useRabbenuTam,
     language: prefs.language,
     locationMode: prefs.locationMode,
     onboardingComplete: prefs.onboardingComplete,

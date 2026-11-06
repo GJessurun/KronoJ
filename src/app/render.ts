@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { getDisplayDate, getTodayInTimeZone, toGDate } from "./schedule";
+import { addDays, getDisplayDate, toGDate } from "./schedule";
 import type { AppState } from "./state";
 import {
   formatGregorianDateFr,
@@ -52,7 +52,8 @@ function escapeHtml(text: string): string {
 
 export function renderApp(
   state: AppState,
-  dateCalendar: { type: CalendarType; year: number; month: number }
+  dateCalendar: { type: CalendarType; year: number; month: number },
+  activeSettingsSection = "horaires"
 ): void {
   const app = document.getElementById("app");
   if (!app) return;
@@ -62,14 +63,11 @@ export function renderApp(
     state.selectedDate,
     state.city,
     state.liturgy,
-    now
+    now,
+    state.useRabbenuTam
   );
 
-    getTodayInTimeZone(state.city.timeZone, now),
-    state.city,
-    state.liturgy,
-    now
-    
+  const isHe = state.language === "he";
   const inIsrael =
     state.city.countryCode === "il" || state.city.timeZone === "Asia/Jerusalem";
   const scheme = inIsrael ? ParashaScheme.ISRAEL : ParashaScheme.WORLD;
@@ -85,10 +83,31 @@ export function renderApp(
 
   let zmanim: ReturnType<typeof computeZmanim> = [];
   try {
-    zmanim = computeZmanim(displayDate, state.city, state.liturgy);
+    zmanim = computeZmanim(
+      displayDate,
+      state.city,
+      state.liturgy,
+      state.useRabbenuTam
+    );
   } catch (error) {
     console.error("Erreur rendu zmanim :", error);
   }
+  const shabbatTimes =
+    displayDate.getDay() === 5
+      ? {
+          candleLighting: zmanim.find((z) => z.id === "candleLighting")?.timeLabel,
+          tzeit: computeZmanim(
+            addDays(displayDate, 1),
+            state.city,
+            state.liturgy,
+            state.useRabbenuTam
+          ).find((z) => z.id === "tzeit")?.timeLabel,
+        }
+      : null;
+  const shabbatTimesHtml =
+    shabbatTimes?.candleLighting && shabbatTimes.tzeit
+      ? `<div class="parasha-shabbat-times"${isHe ? ' dir="rtl"' : ""}><span class="parasha-shabbat-time"><span>${isHe ? "כניסת שבת" : "Début"}</span><strong>${shabbatTimes.candleLighting}</strong></span><span class="parasha-shabbat-time"><span>${isHe ? "צאת שבת" : "Fin"}</span><strong>${shabbatTimes.tzeit}</strong></span></div>`
+      : "";
   const nowDt = DateTime.fromJSDate(now);
   const activeIdx = getActiveZmanIndex(
     zmanim,
@@ -101,7 +120,6 @@ export function renderApp(
         ? "רב עובדיה · שעות זמניות"
         : "אור מאיר · זוויות שמש"
       : getLiturgyMeta(state.liturgy);
-  const isHe = state.language === "he";
   const isTauri = typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 
   const zmanRows = zmanim
@@ -111,12 +129,9 @@ export function renderApp(
       let metaText = "";
       if (
         z.id === "alot" ||
-        z.id === "misheyakir" ||
-        z.id === "rabbenuTam"
+        z.id === "misheyakir"
       ) {
-        metaText = `${liturgyMeta}${
-          z.id === "rabbenuTam" ? (isHe ? " · רבנו תם" : " · Rabbénou Tam") : ""
-        }`;
+        metaText = liturgyMeta;
       } else if (z.id === "sofZmanShma") {
         metaText = isHe
           ? "אור מאיר · שעות זמניות (מג״א)"
@@ -124,7 +139,17 @@ export function renderApp(
       } else if (z.id === "sofZmanShmaGra") {
         metaText = isHe ? 'גר"א · שעות זמניות' : 'GR"A · heures proportionnelles';
       } else if (z.id === "tzeit") {
-        metaText = isHe ? "זווית שמש 7,08°" : "angle solaire de 7,08°";
+        metaText = state.useRabbenuTam
+          ? isHe
+            ? state.liturgy === "sefarade"
+              ? "רבנו תם · 72 דקות זמניות"
+              : "רבנו תם · זווית שמש 16,1°"
+            : state.liturgy === "sefarade"
+              ? "Rabbénou Tam · 72 minutes proportionnelles"
+              : "Rabbénou Tam · angle solaire de 16,1°"
+          : isHe
+            ? "זווית שמש 7,08°"
+            : "angle solaire de 7,08°";
       } else if (z.id === "plagYalkutYosef") {
         metaText = isHe
           ? "ילקוט יוסף · 75 דקות זמניות לפני צאת הכוכבים"
@@ -133,10 +158,6 @@ export function renderApp(
         metaText = isHe
           ? "18 דקות לפני השקיעה · 40 בירושלים"
           : "18 min avant la Shkia · 40 à Jérusalem";
-      } else if (z.id === "shabbatEnd") {
-        metaText = isHe
-          ? "הרב טוקצ'ינסקי · 8,5°"
-          : "Rav Tucazinski · angle solaire de −8,5°";
       }
       const meta = metaText
         ? `<span class="zman-meta">(${metaText})</span>`
@@ -204,7 +225,7 @@ export function renderApp(
       <div class="date-wrapper${isShabbatDay ? " date-wrapper--shabbat" : ""}">
         <p class="hebrew-date">${hebrew}</p>
         <p class="hebrew-weekday"><span>Jour hébraïque</span> ${escapeHtml(formatHebrewWeekday(displayDate))}</p>
-        ${parashaDisplay ? `<div class="parasha-line"><span class="parasha-caption">Paracha de la semaine</span><span class="parasha-name">${escapeHtml(parashaDisplay)}</span></div>` : ""}
+        ${parashaDisplay ? `<div class="parasha-line"><span class="parasha-caption">Paracha de la semaine</span><span class="parasha-name">${escapeHtml(parashaDisplay)}</span>${shabbatTimesHtml}</div>` : ""}
       </div>
       <p class="omer-line" style="${omerDay ? "" : "display:none"}">${omerDay ? formatOmerLine(omerDay) : ""}</p>
       <div class="holiday-box" style="${holiday ? "" : "display:none"}">
@@ -256,11 +277,27 @@ export function renderApp(
       <div class="settings-inner">
         <div class="settings-header">
           <span class="settings-brand-mark">${brandSvg()}</span>
-          <div class="settings-brand-copy"><strong>KronoJ</strong><span>Le temps, au rythme du calendrier hébraïque</span></div>
+          <div class="settings-brand-copy"><strong>KronoJ</strong><span>${isHe ? "הגדרות" : "Réglages"}</span></div>
           <button type="button" class="settings-icon-close" id="settings-close" aria-label="Fermer les réglages">×</button>
         </div>
 
+        <nav class="settings-nav" role="tablist" aria-label="Catégories des réglages">
+          ${[
+            ["horaires", isHe ? "זמנים" : "Horaires", "◷"],
+            ["langue", isHe ? "שפה" : "Langue", "א"],
+            ["lieu", isHe ? "מיקום" : "Lieu", "⌖"],
+            ["notifications", isHe ? "התראות" : "Alertes", "♧"],
+            ["systeme", isHe ? "מערכת" : "Système", "↗"],
+          ]
+            .map(
+              ([id, label, icon]) =>
+                `<button type="button" class="settings-tab${activeSettingsSection === id ? " is-active" : ""}" id="settings-tab-${id}" role="tab" data-settings-tab="${id}" aria-controls="settings-section-${id}" aria-selected="${activeSettingsSection === id}"><span aria-hidden="true">${icon}</span>${label}</button>`
+            )
+            .join("")}
+        </nav>
+
         <div class="settings-content">
+          <section class="settings-section" id="settings-section-horaires" role="tabpanel" aria-labelledby="settings-tab-horaires" data-settings-section="horaires" ${activeSettingsSection === "horaires" ? "" : "hidden"}>
           <section class="settings-card">
             <div class="settings-card-heading"><span class="settings-card-icon">◷</span><div><h2>Horaires & méthode</h2><p>Choisissez la méthode de calcul qui vous correspond.</p></div></div>
             <fieldset class="settings-group">
@@ -268,8 +305,17 @@ export function renderApp(
               <label class="radio-card"><input type="radio" name="liturgy" value="sefarade" ${state.liturgy === "sefarade" ? "checked" : ""} /><span><strong>Rav Ovadia Yossef</strong><small>Séfarade · heures proportionnelles</small></span></label>
               <label class="radio-card"><input type="radio" name="liturgy" value="ashkenaze" ${state.liturgy === "ashkenaze" ? "checked" : ""} /><span><strong>Or Méir (Rav Meir Posen)</strong><small>Ashkénaze · angles solaires</small></span></label>
             </fieldset>
+            <fieldset class="settings-group settings-group--sub">
+              <legend>${isHe ? "חישוב צאת הכוכבים" : "Calcul du Tzeit HaKochavim"}</legend>
+              <div class="choice-pills">
+                <label class="choice-pill"><input type="radio" name="use-rabbenu-tam" value="false" ${state.useRabbenuTam ? "" : "checked"} /><span>${isHe ? "ללא רבנו תם" : "Sans Rabbénou Tam"}</span></label>
+                <label class="choice-pill"><input type="radio" name="use-rabbenu-tam" value="true" ${state.useRabbenuTam ? "checked" : ""} /><span>${isHe ? "עם רבנו תם" : "Avec Rabbénou Tam"}</span></label>
+              </div>
+            </fieldset>
           </section>
 
+          </section>
+          <section class="settings-section" id="settings-section-langue" role="tabpanel" aria-labelledby="settings-tab-langue" data-settings-section="langue" ${activeSettingsSection === "langue" ? "" : "hidden"}>
           <section class="settings-card">
             <div class="settings-card-heading"><span class="settings-card-icon">א</span><div><h2>Langue des horaires</h2><p>Choisissez la langue des noms de zmanim.</p></div></div>
             <fieldset class="settings-group">
@@ -280,6 +326,8 @@ export function renderApp(
             </fieldset>
           </section>
 
+          </section>
+          <section class="settings-section" id="settings-section-lieu" role="tabpanel" aria-labelledby="settings-tab-lieu" data-settings-section="lieu" ${activeSettingsSection === "lieu" ? "" : "hidden"}>
           <section class="settings-card">
             <div class="settings-card-heading"><span class="settings-card-icon">⌖</span><div><h2>Votre lieu</h2><p>Les horaires sont calculés selon votre position.</p></div></div>
             <div class="settings-location">
@@ -297,6 +345,8 @@ export function renderApp(
             </div>
           </section>
 
+          </section>
+          <section class="settings-section" id="settings-section-notifications" role="tabpanel" aria-labelledby="settings-tab-notifications" data-settings-section="notifications" ${activeSettingsSection === "notifications" ? "" : "hidden"}>
           <section class="settings-card">
             <div class="settings-card-heading"><span class="settings-card-icon">♧</span><div><h2>Notifications de zmanim</h2><p>Recevez une alerte native à l’heure de chaque zman choisi.</p></div></div>
             <div class="notification-actions">
@@ -314,10 +364,13 @@ export function renderApp(
             </fieldset>
           </section>
 
+          </section>
+          <section class="settings-section" id="settings-section-systeme" role="tabpanel" aria-labelledby="settings-tab-systeme" data-settings-section="systeme" ${activeSettingsSection === "systeme" ? "" : "hidden"}>
           <section class="settings-card settings-card--startup">
             <div class="settings-card-heading"><span class="settings-card-icon">↗</span><div><h2>Démarrage du système</h2><p>Lancer KronoJ automatiquement à l’ouverture de Windows.</p></div></div>
             <label class="toggle-row startup-toggle"><span class="toggle-copy"><strong>Ouvrir avec Windows</strong><small>Vous pourrez toujours masquer l’application dans la zone de notification.</small></span><input type="checkbox" id="start-at-login" ${state.startAtLogin ? "checked" : ""} ${isTauri ? "" : "disabled"} /><span class="toggle-switch" aria-hidden="true"></span></label>
             <p class="settings-status" id="autostart-status">${isTauri ? (state.startAtLogin ? "Lancement automatique activé." : "Lancement automatique désactivé.") : "Disponible dans l’application de bureau."}</p>
+          </section>
           </section>
         </div>
       </div>

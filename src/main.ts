@@ -54,6 +54,15 @@ let dateCalendarType: CalendarType = "civil";
 let dateCalendarYear = 0;
 let dateCalendarMonth = 0;
 const settingsStatusMessages: Record<string, string> = {};
+const settingsSections = [
+  "horaires",
+  "langue",
+  "lieu",
+  "notifications",
+  "systeme",
+] as const;
+type SettingsSection = (typeof settingsSections)[number];
+let activeSettingsSection: SettingsSection = "horaires";
 
 function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
@@ -67,10 +76,11 @@ function setSettingsStatus(id: string, message: string): void {
 
 async function syncWidgetPreferences(
   location: AppLocation,
-  liturgy: AppState["liturgy"]
+  liturgy: AppState["liturgy"],
+  useRabbenuTam: boolean
 ): Promise<void> {
   try {
-    await saveWidgetPreferences(location, liturgy);
+    await saveWidgetPreferences(location, liturgy, useRabbenuTam);
     navigator.serviceWorker?.controller?.postMessage({ type: "refresh-widgets" });
   } catch (error) {
     console.error("Impossible de synchroniser les réglages du widget :", error);
@@ -187,7 +197,12 @@ async function refreshNotificationSchedule(force = false): Promise<void> {
     for (let offset = 0; offset < 2; offset++) {
       const date = now.plus({ days: offset });
       const civilDate = new Date(date.year, date.month - 1, date.day, 12);
-      for (const zman of computeZmanim(civilDate, state.city, state.liturgy)) {
+      for (const zman of computeZmanim(
+        civilDate,
+        state.city,
+        state.liturgy,
+        state.useRabbenuTam
+      )) {
         if (state.notifications[zman.id] !== true) continue;
         const atMillis = zman.time.setZone(state.city.timeZone).toMillis();
         if (atMillis <= now.toMillis()) continue;
@@ -245,7 +260,7 @@ function refresh(): void {
     type: dateCalendarType,
     year: dateCalendarYear,
     month: dateCalendarMonth,
-  });
+  }, activeSettingsSection);
   bindEvents();
   if (keepSettings) {
     const nextPanel = document.getElementById("settings-panel") as HTMLDialogElement | null;
@@ -318,11 +333,16 @@ async function persist(
 ): Promise<void> {
   const prefs = await savePreferences(partial);
   if (!isTauri()) {
-    await syncWidgetPreferences(prefs.location, prefs.liturgy);
+    await syncWidgetPreferences(
+      prefs.location,
+      prefs.liturgy,
+      prefs.useRabbenuTam
+    );
   }
   state = {
     ...state,
     liturgy: prefs.liturgy,
+    useRabbenuTam: prefs.useRabbenuTam,
     language: prefs.language,
     locationMode: prefs.locationMode,
     onboardingComplete: prefs.onboardingComplete,
@@ -465,6 +485,22 @@ async function confirmMapLocation(): Promise<void> {
 }
 
 function bindEvents(): void {
+  document.querySelectorAll<HTMLButtonElement>("[data-settings-tab]").forEach((button) => {
+    button.addEventListener("click", () => {
+      const section = button.dataset.settingsTab;
+      if (!settingsSections.some((id) => id === section)) return;
+      activeSettingsSection = section as SettingsSection;
+      document.querySelectorAll<HTMLButtonElement>("[data-settings-tab]").forEach((tab) => {
+        const isActive = tab.dataset.settingsTab === activeSettingsSection;
+        tab.classList.toggle("is-active", isActive);
+        tab.setAttribute("aria-selected", String(isActive));
+      });
+      document.querySelectorAll<HTMLElement>("[data-settings-section]").forEach((panel) => {
+        panel.hidden = panel.dataset.settingsSection !== activeSettingsSection;
+      });
+    });
+  });
+
   document.querySelectorAll("[data-nav]").forEach((el) => {
     el.addEventListener("click", (e) => {
       const nav = (e.currentTarget as HTMLElement).dataset.nav;
@@ -554,6 +590,13 @@ function bindEvents(): void {
     input.addEventListener("change", (e) => {
       const val = (e.target as HTMLInputElement).value as "sefarade" | "ashkenaze";
       void persist({ liturgy: val });
+    });
+  });
+
+  settingsPanel?.querySelectorAll('input[name="use-rabbenu-tam"]').forEach((input) => {
+    input.addEventListener("change", (e) => {
+      const useRabbenuTam = (e.target as HTMLInputElement).value === "true";
+      void persist({ useRabbenuTam });
     });
   });
 
@@ -664,7 +707,11 @@ async function init(): Promise<void> {
   const prefs = await loadPreferences();
   state = createInitialState(prefs);
   if (!isTauri()) {
-    await syncWidgetPreferences(prefs.location, prefs.liturgy);
+    await syncWidgetPreferences(
+      prefs.location,
+      prefs.liturgy,
+      prefs.useRabbenuTam
+    );
     if ("serviceWorker" in navigator && window.isSecureContext) {
       try {
         const widgetWorkerPath = import.meta.env.DEV

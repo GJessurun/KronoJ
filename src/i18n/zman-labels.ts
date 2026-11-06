@@ -45,14 +45,4 @@ export const ZMAN_LABELS: Record<ZmanId, ZmanLabels> = {
     he: "צאת הכוכבים",
     heParen: "צאת הכוכבים",
   },
-  shabbatEnd: {
-    fr: "Fin de Shabbat",
-    he: "צאת השבת",
-    heParen: "צאת השבת",
-  },
-  rabbenuTam: {
-    fr: "Tzeit Rabbénou Tam",
-    he: "צאת הכוכבים — רבנו תם",
-    heParen: "רבנו תם",
-  },
 };

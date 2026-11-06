@@ -4,6 +4,7 @@ import type { Liturgy } from "../lib/zmanim-service";
 export interface WidgetSettings {
   location: AppLocation;
   liturgy: Liturgy;
+  useRabbenuTam: boolean;
 }
 
 const DATABASE_NAME = "kronoj-widgets";
@@ -28,12 +29,16 @@ function openDatabase(): Promise<IDBDatabase> {
 
 export async function saveWidgetPreferences(
   location: AppLocation,
-  liturgy: Liturgy
+  liturgy: Liturgy,
+  useRabbenuTam: boolean
 ): Promise<void> {
   const database = await openDatabase();
   await new Promise<void>((resolve, reject) => {
     const transaction = database.transaction(STORE_NAME, "readwrite");
-    transaction.objectStore(STORE_NAME).put({ location, liturgy }, SETTINGS_KEY);
+    transaction.objectStore(STORE_NAME).put(
+      { location, liturgy, useRabbenuTam },
+      SETTINGS_KEY
+    );
     transaction.oncomplete = () => resolve();
     transaction.onerror = () =>
       reject(transaction.error ?? new Error("Échec d’enregistrement des réglages du widget."));
@@ -50,12 +55,19 @@ export async function loadWidgetPreferences(): Promise<WidgetSettings> {
       .objectStore(STORE_NAME)
       .get(SETTINGS_KEY);
     request.onsuccess = () => {
-      const stored = request.result as WidgetSettings | undefined;
+      const stored = request.result as Partial<WidgetSettings> | undefined;
       resolve(
-        stored ?? {
-          location: DEFAULT_LOCATION,
-          liturgy: "sefarade",
-        }
+        stored
+          ? {
+              location: stored.location ?? DEFAULT_LOCATION,
+              liturgy: stored.liturgy ?? "sefarade",
+              useRabbenuTam: stored.useRabbenuTam === true,
+            }
+          : {
+              location: DEFAULT_LOCATION,
+              liturgy: "sefarade",
+              useRabbenuTam: false,
+            }
       );
     };
     request.onerror = () =>

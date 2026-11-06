@@ -1,6 +1,6 @@
 {
   "productName": "KronoJ",
-  "version": "0.1.7",
+  "version": "0.1.8",
   "identifier": "com.jessu.kronoj",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -36,6 +36,17 @@
       "icons/128x128@2x.png",
       "icons/icon.icns",
       "icons/icon.ico"
-    ]
+    ],
+    "windows": {
+      "nsis": {
+        "headerImage": "icons/installer-nsis-header.bmp",
+        "sidebarImage": "icons/installer-nsis-sidebar.bmp",
+        "installerIcon": "icons/icon.ico"
+      },
+      "wix": {
+        "bannerPath": "icons/installer-wix-banner.bmp",
+        "dialogImagePath": "icons/installer-wix-dialog.bmp"
+      }
+    }
   }
 }

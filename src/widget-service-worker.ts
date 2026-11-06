@@ -70,7 +70,8 @@ async function renderWidget(widget: Widget, settings?: WidgetSettings): Promise<
     today,
     preferences.location,
     preferences.liturgy,
-    now
+    now,
+    preferences.useRabbenuTam
   );
   const hebrewDate = formatHebrewDate(HDate.make(displayDate));
   const templateUrl = new URL(
