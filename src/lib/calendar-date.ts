@@ -11,6 +11,14 @@ export interface CalendarMonth {
   leadingDays: number;
 }
 
+export function isRoshChodesh(date: Date): boolean {
+  const hebrewDate = HDate.make(date);
+  return (
+    hebrewDate.getDay() === 1 ||
+    (hebrewDate.getDay() === 30 && hebrewDate.plus(1).getDay() === 1)
+  );
+}
+
 const HEBREW_MONTHS = [
   HDateMonth.NISSAN,
   HDateMonth.IYAR,

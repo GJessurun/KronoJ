@@ -23,6 +23,7 @@ import {
   getCalendarDate,
   getCalendarMonth,
   getCalendarMonths,
+  isRoshChodesh,
   type CalendarType,
 } from "../lib/calendar-date";
 
@@ -77,6 +78,7 @@ export function renderApp(
   const gregorian = formatGregorianDateFr(displayDate);
   const hebrew = formatHebrewDate(hdate);
   const isShabbatDay = isShabbat(displayDate);
+  const isRoshChodeshDay = isRoshChodesh(displayDate);
   const omerDay = getOmerDay(gdate, scheme);
   const holiday = getHolidayDisplay(gdate, scheme);
   const parashaDisplay = getWeeklyParasha(displayDate, inIsrael);
@@ -210,7 +212,17 @@ export function renderApp(
       const selected = toDateKey(
         getCalendarDate(dateCalendar.type, dateCalendar.year, dateCalendar.month, day)
       ) === toDateKey(state.selectedDate);
-      return `<button type="button" class="calendar-day${selected ? " is-selected" : ""}" data-calendar-day="${day}" aria-pressed="${selected}">${day}</button>`;
+      const civilDate = getCalendarDate(
+        dateCalendar.type,
+        dateCalendar.year,
+        dateCalendar.month,
+        day
+      );
+      const roshChodesh = isRoshChodesh(civilDate);
+      const accessibleDate = roshChodesh
+        ? `${day}, ${isHe ? "ראש חודש" : "Roch Hodech"}`
+        : String(day);
+      return `<button type="button" class="calendar-day${selected ? " is-selected" : ""}${roshChodesh ? " is-rosh-hodesh" : ""}" data-calendar-day="${day}" aria-label="${accessibleDate}" aria-pressed="${selected}">${day}</button>`;
     }),
   ].join("");
   const yearRange = Array.from(
@@ -225,6 +237,7 @@ export function renderApp(
       <div class="date-wrapper${isShabbatDay ? " date-wrapper--shabbat" : ""}">
         <p class="hebrew-date">${hebrew}</p>
         <p class="hebrew-weekday"><span>Jour hébraïque</span> ${escapeHtml(formatHebrewWeekday(displayDate))}</p>
+        ${isRoshChodeshDay ? `<p class="rosh-hodesh-badge"${isHe ? ' dir="rtl"' : ""}>${isHe ? "ראש חודש" : "ROCH HODECH"}</p>` : ""}
         ${parashaDisplay ? `<div class="parasha-line"><span class="parasha-caption">Paracha de la semaine</span><span class="parasha-name">${escapeHtml(parashaDisplay)}</span>${shabbatTimesHtml}</div>` : ""}
       </div>
       <p class="omer-line" style="${omerDay ? "" : "display:none"}">${omerDay ? formatOmerLine(omerDay) : ""}</p>
@@ -355,6 +368,7 @@ export function renderApp(
             </div>
             <fieldset class="settings-group notification-list">
               <legend>Me prévenir pour</legend>
+              <label class="toggle-row"><span class="toggle-copy"><strong>${isHe ? "ראש חודש" : "Roch Hodech"}</strong><small>${isHe ? "התראה יום לפני וביום עצמו" : "La veille et le jour même"}</small></span><input type="checkbox" name="notification" data-zman-id="roshHodesh" ${state.notifications.roshHodesh === true ? "checked" : ""} ${isTauri ? "" : "disabled"} /><span class="toggle-switch" aria-hidden="true"></span></label>
               ${ZMAN_ORDER.map((id) => {
                 const labels = ZMAN_LABELS[id];
                 const isChecked = state.notifications[id] === true;

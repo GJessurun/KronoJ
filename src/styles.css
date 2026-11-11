@@ -106,6 +106,18 @@ body {
   opacity: 0.75;
 }
 
+.rosh-hodesh-badge {
+  display: inline-block;
+  margin-top: 9px;
+  padding: 4px 10px;
+  border: 1px solid rgba(201, 162, 39, 0.55);
+  border-radius: 999px;
+  color: var(--color-gold);
+  font-size: 0.68rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+}
+
 .parasha-line {
   display: flex;
   flex-direction: column;
@@ -1707,6 +1719,7 @@ body {
   }
 
   .calendar-day {
+    position: relative;
     border: 1px solid transparent;
     border-radius: 9px;
     background: transparent;
@@ -1714,6 +1727,16 @@ body {
     font: inherit;
     font-size: 0.76rem;
     cursor: pointer;
+  }
+
+  .calendar-day.is-rosh-hodesh::after {
+    position: absolute;
+    bottom: 3px;
+    width: 4px;
+    height: 4px;
+    border-radius: 50%;
+    background: var(--color-gold);
+    content: "";
   }
 
   .calendar-day:hover,
@@ -1727,6 +1750,10 @@ body {
     background: var(--color-gold);
     color: #17130b;
     font-weight: 600;
+  }
+
+  .calendar-day.is-selected.is-rosh-hodesh::after {
+    background: #17130b;
   }
 
   .calendar-grid--hebrew {

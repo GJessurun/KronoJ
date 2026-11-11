@@ -40,6 +40,7 @@ L'exécutable se trouve dans `src-tauri/target/release/bundle/`.
 
 Une release Windows publique est compilée automatiquement lorsqu'un tag de version `v*` est poussé. Le workflow publie quatre installateurs x64 : MSI et EXE avec WebView2 téléchargé si nécessaire, ainsi que MSI et EXE avec le programme d'installation WebView2 hors ligne inclus. GitHub ajoute aussi les archives du code source correspondant au tag.
 
+
 Quand vous souhaitez publier les changements actuels, lancez une seule commande pour incrémenter la version, synchroniser les fichiers, créer le commit et le tag, puis tout pousser sur GitHub :
 
 ```bash
@@ -67,7 +68,9 @@ Dans Partner Center, indiquez `/S` (S majuscule) comme argument d’installation
 - Bascule automatique au lendemain après Tzeit
 - Paracha hebdomadaire affichée toute la semaine et mise en évidence le Shabbat
 - Jour de la semaine selon le calendrier hébraïque
-- Notifications natives de bureau pour les zmanim sélectionnés, planifiées même lorsque la fenêtre est masquée
+- Notifications natives de bureau pour les zmanim sélectionnés, émises uniquement lorsque KronoJ est en cours d’exécution
+- Repère visuel de Roch Hodech sur les dates concernées, dans l’écran principal et les calendriers
+- Rappels optionnels de Roch Hodech la veille et le jour même ; le rappel du jour même peut être reporté de deux heures
 - Démarrage automatique configurable et lancement réduit dans la zone de notification
 - Instance unique : une seconde ouverture réaffiche la fenêtre déjà lancée
 - Méthode Rav Ovadia (minutes proportionnelles) / Or Méir (angles solaires)
@@ -81,8 +84,9 @@ Dans Partner Center, indiquez `/S` (S majuscule) comme argument d’installation
 - Cache local des coordonnées pour fonctionnement offline au redémarrage
 - Configuration de la langue et de la position au premier lancement
 - Fermeture → icône dans la barre des tâches
+- Taille de la fenêtre restaurée au prochain lancement
 
-Les notifications Windows sont prises en charge dans la version installée de l’application. Le système peut également nécessiter l’autorisation des notifications dans ses réglages.
+Les notifications Windows sont prises en charge dans la version installée de l’application. Le système peut également nécessiter l’autorisation des notifications dans ses réglages. Elles ne sont pas exécutées lorsque KronoJ est fermé ou lorsque l’ordinateur est éteint ; une alerte dont l’échéance est dépassée de plus d’une minute est ignorée au réveil. Le rappel de Roch Hodech est réglé à 10 h, la veille puis le jour même ; le bouton « Rappeler dans 2 heures » est présent uniquement sur celui du jour même.
 
 ## Widgets Windows
 

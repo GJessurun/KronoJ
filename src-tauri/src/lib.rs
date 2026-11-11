@@ -9,10 +9,16 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Manager, State,
 };
-use tauri_plugin_notification::NotificationExt;
+use tauri_plugin_notification::{Action, ActionType, NotificationExt};
+
+#[derive(Default)]
+struct PendingNotifications {
+    scheduled: Vec<ScheduledNotification>,
+    snoozed: Vec<ScheduledNotification>,
+}
 
 #[derive(Clone, Default)]
-struct NotificationSchedule(Arc<Mutex<Vec<ScheduledNotification>>>);
+struct NotificationSchedule(Arc<Mutex<PendingNotifications>>);
 
 #[derive(Clone, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -21,6 +27,24 @@ struct ScheduledNotification {
     at_millis: i64,
     title: String,
     body: String,
+    #[serde(default)]
+    action_type_id: Option<String>,
+}
+
+fn take_due(
+    pending: &mut Vec<ScheduledNotification>,
+    now_millis: i64,
+) -> Vec<ScheduledNotification> {
+    let mut due = Vec::new();
+    pending.retain(|item| {
+        if item.at_millis <= now_millis {
+            due.push(item.clone());
+            false
+        } else {
+            true
+        }
+    });
+    due
 }
 
 #[tauri::command]
@@ -32,7 +56,7 @@ fn set_notification_schedule(
         .0
         .lock()
         .map_err(|error| format!("Impossible de mettre à jour les alertes : {error}"))?;
-    *pending = schedule;
+    pending.scheduled = schedule;
     Ok(())
 }
 
@@ -56,6 +80,53 @@ pub fn run() {
         .setup(|app| {
             let app_handle = app.handle().clone();
             let schedule = app.state::<NotificationSchedule>().inner().clone();
+            let notification = app_handle.notification();
+            notification.register_action_types(vec![
+                ActionType::builder("rosh-hodesh-fr")
+                    .actions(vec![Action::builder("snooze", "Rappeler dans 2 heures").build()])
+                    .build(),
+                ActionType::builder("rosh-hodesh-he")
+                    .actions(vec![Action::builder("snooze", "תזכיר לי בעוד שעתיים").build()])
+                    .build(),
+            ])?;
+            let snooze_schedule = schedule.clone();
+            notification.on_action(move |performed| {
+                if performed.action_id() != "snooze" {
+                    return;
+                }
+
+                let now_millis = match SystemTime::now().duration_since(UNIX_EPOCH) {
+                    Ok(duration) => duration.as_millis() as i64,
+                    Err(error) => {
+                        eprintln!("Impossible de lire l’heure pour le rappel différé : {error}");
+                        return;
+                    }
+                };
+                let notification = performed.notification();
+                let title = notification
+                    .and_then(|item| item.title())
+                    .unwrap_or("KronoJ · Roch Hodech")
+                    .to_owned();
+                let body = notification
+                    .and_then(|item| item.body())
+                    .unwrap_or("Rappel : ce soir, c’est Roch Hodech.")
+                    .to_owned();
+                let postponed = ScheduledNotification {
+                    id: "rosh-hodesh-snoozed".to_owned(),
+                    at_millis: now_millis + Duration::from_secs(2 * 60 * 60).as_millis() as i64,
+                    title,
+                    body,
+                    action_type_id: None,
+                };
+
+                match snooze_schedule.0.lock() {
+                    Ok(mut pending) => pending.snoozed.push(postponed),
+                    Err(error) => {
+                        eprintln!("Impossible de reporter le rappel de Roch Hodech : {error}");
+                    }
+                }
+            })?;
+
             thread::spawn(move || loop {
                 let now_millis = match SystemTime::now().duration_since(UNIX_EPOCH) {
                     Ok(duration) => duration.as_millis() as i64,
@@ -68,15 +139,8 @@ pub fn run() {
 
                 let due = match schedule.0.lock() {
                     Ok(mut pending) => {
-                        let mut due = Vec::new();
-                        pending.retain(|item| {
-                            if item.at_millis <= now_millis {
-                                due.push(item.clone());
-                                false
-                            } else {
-                                true
-                            }
-                        });
+                        let mut due = take_due(&mut pending.scheduled, now_millis);
+                        due.extend(take_due(&mut pending.snoozed, now_millis));
                         due
                     }
                     Err(error) => {
@@ -87,13 +151,23 @@ pub fn run() {
                 };
 
                 for item in due {
-                    if let Err(error) = app_handle
+                    if now_millis.saturating_sub(item.at_millis) > 60_000 {
+                        eprintln!(
+                            "Notification {} ignorée car son échéance est dépassée.",
+                            item.id
+                        );
+                        continue;
+                    }
+
+                    let mut builder = app_handle
                         .notification()
                         .builder()
                         .title(item.title)
-                        .body(item.body)
-                        .show()
-                    {
+                        .body(item.body);
+                    if let Some(action_type_id) = item.action_type_id {
+                        builder = builder.action_type_id(action_type_id);
+                    }
+                    if let Err(error) = builder.show() {
                         eprintln!("Échec de la notification {} : {error}", item.id);
                     }
                 }

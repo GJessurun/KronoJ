@@ -10,6 +10,11 @@ import type { Liturgy } from "../lib/zmanim-service";
 export type Language = "fr" | "he";
 export type LocationMode = "auto" | "map";
 
+export interface WindowSize {
+  width: number;
+  height: number;
+}
+
 export interface AppPreferences {
   location: AppLocation;
   liturgy: Liturgy;
@@ -19,6 +24,7 @@ export interface AppPreferences {
   onboardingComplete: boolean;
   notifications: Record<string, boolean>;
   startAtLogin: boolean;
+  windowSize: WindowSize | null;
 }
 
 const DEFAULTS: AppPreferences = {
@@ -30,6 +36,7 @@ const DEFAULTS: AppPreferences = {
   onboardingComplete: false,
   notifications: {},
   startAtLogin: false,
+  windowSize: null,
 };
 
 const STORE_PATH = "kronoj-settings.json";
@@ -89,6 +96,23 @@ function parseStoredLocation(value: unknown): AppLocation | null {
   };
 }
 
+function parseWindowSize(value: unknown): WindowSize | null {
+  if (!value || typeof value !== "object") return null;
+  const size = value as Partial<WindowSize>;
+  if (
+    typeof size.width !== "number" ||
+    !Number.isFinite(size.width) ||
+    typeof size.height !== "number" ||
+    !Number.isFinite(size.height)
+  ) {
+    return null;
+  }
+  return {
+    width: Math.max(560, size.width),
+    height: Math.max(560, size.height),
+  };
+}
+
 export function resolveInitialLocation(
   stored: AppLocation | null | undefined
 ): AppLocation {
@@ -110,6 +134,7 @@ export async function loadPreferences(): Promise<AppPreferences> {
       locationMode: legacyMode === "map" ? "map" : "auto",
       notifications: normalizeNotifications(legacy?.notifications),
       startAtLogin: legacy?.startAtLogin ?? DEFAULTS.startAtLogin,
+      windowSize: parseWindowSize(legacy?.windowSize),
     };
   }
 
@@ -121,6 +146,7 @@ export async function loadPreferences(): Promise<AppPreferences> {
   const onboardingComplete = await store.get<boolean>("onboardingComplete");
   const startAtLogin = await store.get<boolean>("startAtLogin");
   const storedLocation = parseStoredLocation(await store.get("location"));
+  const windowSize = parseWindowSize(await store.get("windowSize"));
 
   return {
     location: cached ?? storedLocation ?? DEFAULTS.location,
@@ -133,6 +159,7 @@ export async function loadPreferences(): Promise<AppPreferences> {
       await store.get<Record<string, boolean>>("notifications")
     ),
     startAtLogin: startAtLogin ?? DEFAULTS.startAtLogin,
+    windowSize,
   };
 }
 
@@ -156,6 +183,7 @@ export async function savePreferences(
       onboardingComplete,
       notifications,
       startAtLogin,
+      windowSize,
     } = next;
     localStorage.setItem(
       "kronoj-settings",
@@ -168,6 +196,7 @@ export async function savePreferences(
         onboardingComplete,
         notifications,
         startAtLogin,
+        windowSize,
       })
     );
     return next;

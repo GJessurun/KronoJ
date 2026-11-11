@@ -60,6 +60,7 @@ jobs:
           Copy-Item $msi[0].FullName "release-assets/KronoJ-$env:RELEASE_TAG-windows-x64-webview-offline.msi"
           Copy-Item $exe[0].FullName "release-assets/KronoJ-$env:RELEASE_TAG-windows-x64-webview-offline-setup.exe"
 
+      # Keep the MSI/NSIS migration limitation in the release notes: after NSIS, MSI can create a second installation.
       - name: Publish GitHub release
         uses: softprops/action-gh-release@v2
         with:
@@ -70,6 +71,7 @@ jobs:
 
             - `webview-download` : installateur léger ; Internet est requis si WebView2 Runtime n'est pas déjà installé.
             - `webview-offline` : WebView2 Runtime est inclus ; l'installation peut se faire sans connexion Internet.
+            - **Mise à jour :** utilisez le même format que pour votre installation actuelle. Après une installation NSIS (`-setup.exe`), n'utilisez pas le MSI : il ne détecte pas automatiquement NSIS et peut créer une deuxième installation. NSIS met à jour une installation NSIS et peut migrer une installation MSI.
             - GitHub fournit également les archives du code source correspondant à ce tag.
           draft: false
           prerelease: false

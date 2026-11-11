@@ -1,6 +1,6 @@
 {
   "productName": "KronoJ",
-  "version": "0.1.8",
+  "version": "0.1.9",
   "identifier": "com.jessu.kronoj",
   "build": {
     "beforeDevCommand": "npm run dev",
@@ -39,11 +39,13 @@
     ],
     "windows": {
       "nsis": {
+        "installMode": "currentUser",
         "headerImage": "icons/installer-nsis-header.bmp",
         "sidebarImage": "icons/installer-nsis-sidebar.bmp",
         "installerIcon": "icons/icon.ico"
       },
       "wix": {
+        "upgradeCode": "527194e6-1393-55d2-8b35-e58f929f44ad",
         "bannerPath": "icons/installer-wix-banner.bmp",
         "dialogImagePath": "icons/installer-wix-dialog.bmp"
       }

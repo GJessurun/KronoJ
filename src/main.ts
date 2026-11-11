@@ -9,6 +9,7 @@ import {
   sendNotification,
 } from "@tauri-apps/plugin-notification";
 import { invoke } from "@tauri-apps/api/core";
+import { getCurrentWindow, LogicalSize } from "@tauri-apps/api/window";
 import { DateTime } from "luxon";
 import L from "leaflet";
 import "leaflet/dist/leaflet.css";
@@ -35,6 +36,7 @@ import {
   getCalendarDate,
   getCalendarParts,
   getCalendarMonths,
+  isRoshChodesh,
   type CalendarType,
 } from "./lib/calendar-date";
 import { computeZmanim } from "./lib/zmanim-service";
@@ -156,6 +158,37 @@ async function sendTestNotification(): Promise<void> {
   }
 }
 
+async function setupWindowSize(
+  savedSize: { width: number; height: number } | null
+): Promise<void> {
+  if (!isTauri()) return;
+
+  const appWindow = getCurrentWindow();
+  if (savedSize) {
+    await appWindow.setSize(new LogicalSize(savedSize.width, savedSize.height));
+  }
+
+  let resizeTimer: ReturnType<typeof setTimeout> | null = null;
+  await appWindow.onResized(({ payload }) => {
+    if (resizeTimer) clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      void appWindow
+        .scaleFactor()
+        .then((scaleFactor) =>
+          savePreferences({
+            windowSize: {
+              width: payload.width / scaleFactor,
+              height: payload.height / scaleFactor,
+            },
+          })
+        )
+        .catch((error: unknown) => {
+          console.error("Impossible d’enregistrer la taille de la fenêtre :", error);
+        });
+    }, 350);
+  });
+}
+
 async function updateScheduleIfNewDay(): Promise<void> {
   if (!state || !isTauri()) return;
   const now = DateTime.now().setZone(state.city.timeZone);
@@ -192,6 +225,7 @@ async function refreshNotificationSchedule(force = false): Promise<void> {
       atMillis: number;
       title: string;
       body: string;
+      actionTypeId?: string;
     }[] = [];
 
     for (let offset = 0; offset < 2; offset++) {
@@ -214,6 +248,61 @@ async function refreshNotificationSchedule(force = false): Promise<void> {
         });
       }
     }
+
+    if (state.notifications.roshHodesh === true) {
+      for (let offset = 0; offset <= 1; offset++) {
+        const roshDate = now.startOf("day").plus({ days: offset });
+        const date = new Date(roshDate.year, roshDate.month - 1, roshDate.day, 12);
+        if (!isRoshChodesh(date)) continue;
+
+        const priorDayReminder = roshDate
+          .minus({ days: 1 })
+          .set({ hour: 10, minute: 0, second: 0, millisecond: 0 });
+        const sameDayReminder = roshDate.set({
+          hour: 10,
+          minute: 0,
+          second: 0,
+          millisecond: 0,
+        });
+        const reminders = [
+          {
+            id: `rosh-hodesh-eve-${roshDate.toISODate()}`,
+            at: priorDayReminder,
+            body:
+              state.language === "he"
+                ? "מחר בערב ראש חודש."
+                : "Demain soir, c’est Roch Hodech.",
+          },
+          {
+            id: `rosh-hodesh-today-${roshDate.toISODate()}`,
+            at: sameDayReminder,
+            body:
+              state.language === "he"
+                ? "הערב ראש חודש."
+                : "Ce soir, c’est Roch Hodech.",
+            actionTypeId:
+              state.language === "he"
+                ? "rosh-hodesh-he"
+                : "rosh-hodesh-fr",
+          },
+        ];
+
+        for (const reminder of reminders) {
+          const atMillis = reminder.at.toMillis();
+          if (atMillis <= now.toMillis()) continue;
+          schedule.push({
+            id: reminder.id,
+            atMillis,
+            title: state.language === "he" ? "KronoJ · ראש חודש" : "KronoJ · Roch Hodech",
+            body: reminder.body,
+            ...("actionTypeId" in reminder
+              ? { actionTypeId: reminder.actionTypeId }
+              : {}),
+          });
+        }
+      }
+    }
+
     schedule.sort((a, b) => a.atMillis - b.atMillis);
     await invoke("set_notification_schedule", { schedule });
     notificationScheduleDay = dayKey;
@@ -746,6 +835,7 @@ async function init(): Promise<void> {
     }
   }
 
+  await setupWindowSize(prefs.windowSize);
   refresh();
   await refreshNotificationSchedule(true);
   if (state.onboardingComplete && state.locationMode === "auto") geolocate();
