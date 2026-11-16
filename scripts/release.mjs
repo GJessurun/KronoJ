@@ -22,7 +22,11 @@ function git(args, options = {}) {
 function gitOutput(args) {
   const result = git(args, { capture: true });
   if (result.status !== 0) {
-    fail(result.stderr.trim() || `git ${args.join(' ')} a échoué.`);
+    fail(
+      result.error?.message ||
+        result.stderr?.trim() ||
+        `git ${args.join(' ')} a échoué.`,
+    );
   }
   return result.stdout.trim();
 }
@@ -40,6 +44,57 @@ if (pendingChanges) {
 const branch = gitOutput(['branch', '--show-current']);
 if (!branch) {
   fail('impossible de publier depuis un HEAD détaché.');
+}
+
+const fetch = git(['fetch', '--no-tags', 'origin', branch], { capture: true });
+if (fetch.status !== 0) {
+  fail(
+    fetch.error?.message ||
+      fetch.stderr?.trim() ||
+      `impossible de récupérer origin/${branch}.`,
+  );
+}
+
+const remoteHead = gitOutput(['rev-parse', 'FETCH_HEAD']);
+const remoteIsAncestor = git(['merge-base', '--is-ancestor', remoteHead, 'HEAD'], {
+  capture: true,
+});
+if (remoteIsAncestor.status === 1) {
+  const merge = git(['merge', '--no-edit', '--autostash', remoteHead], {
+    capture: true,
+  });
+  if (merge.status !== 0) {
+    const mergeInProgress = git(['rev-parse', '--verify', 'MERGE_HEAD'], {
+      capture: true,
+    });
+    let abortError = '';
+    if (mergeInProgress.status === 0) {
+      const abort = git(['merge', '--abort'], { capture: true });
+      if (abort.status !== 0) {
+        abortError =
+          abort.error?.message ||
+          abort.stderr?.trim() ||
+          abort.stdout?.trim() ||
+          'impossible d’annuler la fusion en cours.';
+      }
+    }
+    fail(
+      [
+        `impossible d’intégrer origin/${branch} avant la release.`,
+        merge.stderr?.trim() || merge.stdout?.trim(),
+        abortError,
+        'Les changements locaux sont conservés ; résolvez le conflit puis relancez la commande.',
+      ]
+        .filter(Boolean)
+        .join('\n'),
+    );
+  }
+  console.log(`Branche synchronisée avec origin/${branch}.`);
+} else if (remoteIsAncestor.status !== 0) {
+  fail(
+    remoteIsAncestor.stderr?.trim() ||
+      'impossible de vérifier l’historique de la branche distante.',
+  );
 }
 
 const packagePath = resolve(root, 'package.json');

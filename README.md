@@ -47,7 +47,7 @@ Quand vous souhaitez publier les changements actuels, lancez une seule commande 
 npm run release -- patch
 ```
 
-La commande inclut dans le commit de release les changements déjà présents dans le dépôt, synchronise les versions dans les fichiers npm, Tauri et Rust, puis pousse le commit et le tag ensemble vers `origin`. Remplacez `patch` par `minor` ou `major` pour choisir le type d'incrément. Vérifiez `git status` avant de la lancer : toutes les modifications non ignorées (indexées, modifiées ou nouvelles) seront incluses.
+La commande récupère et intègre d'abord les commits de la branche distante, en conservant les changements locaux. Elle inclut ensuite dans le commit de release les changements déjà présents dans le dépôt, synchronise les versions dans les fichiers npm, Tauri et Rust, puis pousse le commit et le tag ensemble vers `origin`. Si l'intégration rencontre un conflit, elle s'arrête sans modifier les versions ; résolvez le conflit puis relancez la commande. Remplacez `patch` par `minor` ou `major` pour choisir le type d'incrément. Vérifiez `git status` avant de la lancer : toutes les modifications non ignorées (indexées, modifiées ou nouvelles) seront incluses.
 
 La compilation et la publication peuvent être suivies dans l'onglet **Actions** du dépôt ; la release apparaît ensuite dans **Releases**.
 
